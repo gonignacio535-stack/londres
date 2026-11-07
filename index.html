@@ -150,7 +150,7 @@ section.block{margin-top:30px}
     <div>
       <p class="dates">18–22 nov 2026 · 5 días · en pareja</p>
       <h1>Londres</h1>
-      <p class="home">Cada mañana salís desde <strong>Bayswater</strong>, junto a Hyde Park</p>
+      <p class="home">Cada mañana salís de <strong>80 Inverness Terrace</strong>, W2 3LD (Bayswater)</p>
     </div>
     <span class="count" id="count"></span>
   </header>
@@ -175,15 +175,15 @@ section.block{margin-top:30px}
 "use strict";
 
 /* ---------- Datos del itinerario ---------- */
-var CASA = {lat:51.5121, lon:-0.1879};
-function casa(t, desc, leg){ return {t:t, name:"Casa · Bayswater", home:true, kind:"casa", lat:CASA.lat, lon:CASA.lon, q:"Bayswater station, London", desc:desc||"", leg:leg}; }
+var CASA = {lat:51.5128, lon:-0.1878};
+function casa(t, desc, leg){ return {t:t, name:"Casa · 80 Inverness Terrace", home:true, kind:"casa", lat:CASA.lat, lon:CASA.lon, q:"80 Inverness Terrace, London W2 3LD", desc:desc||"", leg:leg}; }
 
 var DAYS = [
  {id:"mie", short:"Mié 18", long:"Miércoles 18 de noviembre", date:"2026-11-18", theme:"Llegada, compra y Notting Hill", c:"--d1", cost:"£13,70", costNote:"solo el aeropuerto", reservas:"Ninguna", stops:[
   {t:"13:00", name:"Aeropuerto de Gatwick", kind:"transporte", off:"s", offLabel:"Gatwick · 45 km", lat:51.1537, lon:-0.1821, q:"Gatwick Airport", desc:"Vuelo W95724 desde Málaga. Pasaporte y ETA por las puertas automáticas. La maleta tarda 30–45 min: comprad la comida mientras (M&S, Boots o Pret, £5–8)."},
   {t:"15:00", name:"London Victoria", kind:"transporte", lat:51.4952, lon:-0.1441, q:"London Victoria station", leg:{m:"tren", txt:"Tren Southern a Victoria · 35 min", cost:"£10,70"}, desc:"No entréis por los tornos del Gatwick Express (£24). Bajad al metro y coged la línea Circle."},
   casa("15:30", "Dejad la maleta. Está a 3 min de Bayswater y a 5 de Queensway.", {m:"metro", txt:"Metro Circle · Victoria → Bayswater · 20 min", cost:"£3,00"}),
-  {t:"15:45", name:"Compra en el súper", short:"Compra", kind:"compra", lat:51.5185, lon:-0.1880, q:"Waitrose Bayswater Porchester Road", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Waitrose de Porchester Road (abre hasta las 22:00) para la compra grande; el Tesco Express de Queensway, para algo rápido. Llevad bolsa. A las 16:30, de vuelta a casa para dejarla."},
+  {t:"15:45", name:"Compra en el súper", short:"Compra", kind:"compra", lat:51.5185, lon:-0.1880, q:"Waitrose Bayswater Porchester Road", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Waitrose de Porchester Road (abre hasta las 22:00) para la compra grande; Tesco Express, en la esquina de Queensway con Inverness Place, para algo rápido. Llevad bolsa. A las 16:30, de vuelta a casa para dejarla."},
   {t:"17:05", name:"The Churchill Arms", kind:"visita", lat:51.5069, lon:-0.1946, q:"The Churchill Arms Kensington", leg:{m:"pie", txt:"A pie por Bayswater Road y Kensington Church St · 20 min"}, desc:"El pub de la fachada de flores, con la decoración navideña puesta. Tomad algo dentro; su cocina es tailandesa."},
   {t:"17:45", name:"Portobello Road y Blenheim Crescent", short:"Portobello", kind:"visita", lat:51.5155, lon:-0.2054, q:"The Notting Hill Bookshop", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"The Notting Hill Bookshop (13 Blenheim Crescent), Books for Cooks y la ropa de Y2K Vintage (217 Portobello Rd). Las tiendas cierran hacia las 18:00–18:30."},
   {t:"19:00", name:"Cena en Notting Hill Gate", short:"Cena", kind:"comida", lat:51.5091, lon:-0.1965, q:"Notting Hill Gate restaurants", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Pizza, pasta o asiático. Más barato: los asiáticos de Queensway, al lado de casa. Capricho: Granger & Co. (175 Westbourne Grove)."},
