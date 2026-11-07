@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Mapa del viaje a Londres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
+<style>
+/* Layout: mapa esquemático fijo (izquierda en escritorio, arriba en móvil) + itinerario dibujado como una línea de metro */
+:root{
+  --bg:#F2F4F6; --surface:#FFFFFF; --fg:#17212B; --muted:#5A6672; --rule:#D7DDE4; --chip:#E8ECF0;
+  --land:#E8ECF0; --river:#B3CDE4; --park:#CFE2C7; --grid:#D9DFE5;
+  --gold:#B07414; --gold-soft:#F6E6C4; --gold-ink:#6E4508; --on-line:#FFFFFF; --focus:#2C67AA;
+  --d1:#C4413A; --d2:#2C67AA; --d3:#7646AE; --d4:#1C8466; --d5:#C2691A;
+  --f-display:"Young Serif", Georgia, "Times New Roman", serif;
+  --f-body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E141B; --surface:#151D26; --fg:#E5EAF0; --muted:#94A1AF; --rule:#283442; --chip:#1F2833;
+    --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530;
+    --gold:#E2AE4A; --gold-soft:#3A2E17; --gold-ink:#F1CF86; --on-line:#0E141B; --focus:#6FA4E2;
+    --d1:#E86A61; --d2:#5E99DC; --d3:#A47FDB; --d4:#3EBB95; --d5:#E69C50;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E141B; --surface:#151D26; --fg:#E5EAF0; --muted:#94A1AF; --rule:#283442; --chip:#1F2833;
+  --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530;
+  --gold:#E2AE4A; --gold-soft:#3A2E17; --gold-ink:#F1CF86; --on-line:#0E141B; --focus:#6FA4E2;
+  --d1:#E86A61; --d2:#5E99DC; --d3:#A47FDB; --d4:#3EBB95; --d5:#E69C50;
+  color-scheme:dark;
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--f-body); font-size:15px; line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); z-index:10; background:var(--bg)}
+.wrap{max-width:1280px; margin:0 auto; padding-block:20px 48px}
+
+header.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 24px; padding-bottom:14px}
+.top .dates{font-family:var(--f-mono); font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0 0 6px}
+.top h1{font-family:var(--f-display); font-weight:400; font-size:clamp(36px, 6vw, 56px); line-height:1; margin:0; letter-spacing:-.01em; text-wrap:balance}
+.top .home{margin:8px 0 0; color:var(--muted)}
+.count{font-family:var(--f-mono); font-size:13px; border:1px solid var(--rule); background:var(--surface); border-radius:999px; padding:6px 12px; white-space:nowrap}
+
+.layout{display:grid; gap:18px; grid-template-columns:minmax(0, 1fr)}
+.panel{position:sticky; top:env(safe-area-inset-top, 0px); z-index:5; background:var(--bg); padding-block:8px; display:flex; flex-direction:column; gap:10px; min-width:0}
+.tabs{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto; display:inline-flex; align-items:center; gap:8px; font:600 13px/1 var(--f-body); color:var(--fg); background:var(--surface); border:1px solid var(--rule); border-radius:999px; padding:9px 13px; cursor:pointer}
+.tab .dot{width:10px; height:10px; border-radius:50%; background:var(--c)}
+.tab[aria-current="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.tab:hover{border-color:var(--fg)}
+.map{position:relative; height:38vh; height:38svh; min-height:230px; border:1px solid var(--rule); border-radius:12px; overflow:hidden; background:var(--land)}
+.map svg{display:block; width:100%; height:100%}
+.mk{cursor:pointer; outline:none}
+.mk:focus-visible circle, .mk:focus-visible rect{stroke:var(--focus); stroke-width:3}
+.legend{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:6px}
+
+button, a{font-family:inherit}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+
+.list{min-width:0}
+.dayhead .eyebrow{font-family:var(--f-mono); text-transform:uppercase; letter-spacing:.09em; font-size:12px; color:var(--c); margin:0; font-weight:500}
+.dayhead h2{font-family:var(--f-display); font-weight:400; font-size:clamp(24px, 3.4vw, 30px); line-height:1.15; margin:4px 0 12px; text-wrap:balance}
+.facts{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+.fact{font-size:13px; background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:6px 10px}
+.fact b{font-family:var(--f-mono); font-weight:500}
+.btn{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--fg); color:var(--fg); background:transparent; border-radius:999px; padding:8px 14px; text-decoration:none; font-weight:600; font-size:13px; cursor:pointer}
+.btn:hover{background:var(--fg); color:var(--bg)}
+
+.stops{list-style:none; margin:22px 0 0; padding:0; position:relative}
+.stops::before{content:""; position:absolute; left:18px; top:34px; bottom:34px; width:4px; border-radius:2px; background:var(--c)}
+.stop{display:grid; grid-template-columns:40px minmax(0, 1fr); grid-template-areas:". leg" "badge card"; column-gap:12px; scroll-margin-top:calc(38svh + 120px)}
+.leg{grid-area:leg; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; color:var(--muted); padding:9px 0}
+.mode{font:600 10.5px/1 var(--f-body); letter-spacing:.07em; text-transform:uppercase; border-radius:4px; padding:4px 6px}
+.mode.metro, .mode.tren{background:var(--c); color:var(--on-line)}
+.mode.pie, .mode.tour{border:1.5px dashed var(--c); color:var(--fg)}
+.leg .cost{margin-left:auto; font-family:var(--f-mono); color:var(--fg); font-weight:500; font-variant-numeric:tabular-nums}
+.badge{grid-area:badge; align-self:start; justify-self:center; margin-top:10px; width:34px; height:34px; border-radius:50%; background:var(--c); color:var(--on-line); display:grid; place-items:center; font:700 14px/1 var(--f-body); box-shadow:0 0 0 4px var(--bg); position:relative; z-index:1; font-variant-numeric:tabular-nums}
+.badge.home{background:var(--fg); color:var(--bg); border-radius:9px}
+.badge.xmas{box-shadow:0 0 0 3px var(--bg), 0 0 0 5.5px var(--gold), 0 0 0 8px var(--bg)}
+.badge.alt{background:var(--surface); color:var(--fg); border:2px dashed var(--c)}
+.stop.done .badge:not(.home){background:var(--muted)}
+.card{grid-area:card; background:var(--surface); border:1px solid var(--rule); border-radius:12px; padding:12px 14px; cursor:pointer; min-width:0; transition:border-color .15s}
+.card:hover{border-color:var(--muted)}
+.stop.is-active .card{border-color:var(--c); box-shadow:0 0 0 1px var(--c)}
+.meta{display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px}
+.meta time{font-family:var(--f-mono); font-size:13px; font-weight:500; font-variant-numeric:tabular-nums}
+.chip{font-size:11.5px; font-weight:600; border-radius:999px; padding:3px 8px; background:var(--chip); color:var(--fg); line-height:1.3}
+.chip.xmas{background:var(--gold-soft); color:var(--gold-ink)}
+.chip.res{background:transparent; border:1px solid var(--c)}
+.chip.opt{background:transparent; border:1px dashed var(--muted); color:var(--muted)}
+.card h3{font-size:17px; font-weight:700; margin:6px 0 4px; line-height:1.25; text-wrap:balance}
+.card p{margin:0; color:var(--muted); max-width:62ch}
+.stop.done .card h3{text-decoration:line-through; text-decoration-color:var(--muted)}
+.links{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+.links a, .done-btn{font-size:12.5px; font-weight:600; color:var(--fg); text-decoration:none; border:1px solid var(--rule); border-radius:8px; padding:6px 10px; background:var(--bg); cursor:pointer; line-height:1.2}
+.links a:hover, .done-btn:hover{border-color:var(--fg)}
+.done-btn[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.alts{margin-top:28px}
+.alts h3.sec, .sec{font-family:var(--f-mono); font-size:12px; font-weight:500; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin:0 0 10px}
+.alts .stops{margin-top:0}
+.alts .stops::before{display:none}
+.alts .stop{grid-template-areas:"badge card"; margin-bottom:10px}
+
+.intro h2{font-family:var(--f-display); font-weight:400; font-size:clamp(24px, 3.4vw, 30px); line-height:1.15; margin:0 0 8px}
+.intro p{margin:0 0 18px; color:var(--muted); max-width:60ch}
+.daycards{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap:10px}
+.daycard{text-align:left; background:var(--surface); border:1px solid var(--rule); border-radius:12px; padding:14px; cursor:pointer; color:var(--fg); display:flex; flex-direction:column; gap:6px; font:inherit}
+.daycard:hover{border-color:var(--c)}
+.dc-top{display:flex; align-items:center; gap:10px; font-family:var(--f-mono); font-size:12.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted)}
+.dc-title{font-weight:700; font-size:15.5px; line-height:1.3}
+.dc-meta{font-size:13px; color:var(--muted)}
+section.block{margin-top:30px}
+.checks{list-style:none; margin:0; padding:0; display:grid; gap:2px}
+.checks label{display:flex; align-items:flex-start; gap:10px; padding:8px 4px; border-bottom:1px solid var(--rule); cursor:pointer}
+.checks input{margin-top:3px; width:16px; height:16px; accent-color:var(--fg); flex:none}
+.checks .when{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); margin-left:auto; white-space:nowrap; padding-left:8px}
+.checks input:checked + span{color:var(--muted); text-decoration:line-through}
+.budget{width:100%; border-collapse:collapse; font-size:14px}
+.budget td{padding:8px 0; border-bottom:1px solid var(--rule); vertical-align:top}
+.budget td.n{text-align:right; font-family:var(--f-mono); white-space:nowrap; padding-left:12px; font-variant-numeric:tabular-nums}
+.budget tr.total td{font-weight:700; border-bottom:none; padding-top:12px}
+.budget .sub{display:block; color:var(--muted); font-size:12.5px}
+.foot{margin-top:28px; font-size:13px; color:var(--muted)}
+.foot a{color:var(--fg)}
+
+@media (min-width:920px){
+  .layout{grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); align-items:start; gap:28px}
+  .panel{top:calc(env(safe-area-inset-top, 0px) + 12px); height:calc(100svh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); padding-block:0}
+  .map{flex:1; height:auto; min-height:360px}
+  .stop{scroll-margin-top:16px}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important; scroll-behavior:auto !important} }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="dates">18–22 nov 2026 · 5 días · en pareja</p>
+      <h1>Londres</h1>
+      <p class="home">Cada mañana salís desde <strong>Bayswater</strong>, junto a Hyde Park</p>
+    </div>
+    <span class="count" id="count"></span>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Mapa">
+      <nav class="tabs" id="tabs" aria-label="Días del viaje"></nav>
+      <div class="map" id="map"></div>
+      <div class="legend" aria-hidden="true">
+        <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--fg)" stroke-width="4" stroke-linecap="round"/></svg>metro o tren</span>
+        <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--fg)" stroke-width="2.5" stroke-dasharray="5 4"/></svg>a pie</span>
+        <span><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--muted)"/><circle cx="8" cy="8" r="7" fill="none" stroke="var(--gold)" stroke-width="1.6"/></svg>plan navideño</span>
+        <span>Mapa a escala, sin calles</span>
+      </div>
+    </aside>
+    <main class="list" id="list"></main>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Datos del itinerario ---------- */
+var CASA = {lat:51.5121, lon:-0.1879};
+function casa(t, desc, leg){ return {t:t, name:"Casa · Bayswater", home:true, kind:"casa", lat:CASA.lat, lon:CASA.lon, q:"Bayswater station, London", desc:desc||"", leg:leg}; }
+
+var DAYS = [
+ {id:"mie", short:"Mié 18", long:"Miércoles 18 de noviembre", date:"2026-11-18", theme:"Llegada, compra y Notting Hill", c:"--d1", cost:"£13,70", costNote:"solo el aeropuerto", reservas:"Ninguna", stops:[
+  {t:"13:00", name:"Aeropuerto de Gatwick", kind:"transporte", off:"s", offLabel:"Gatwick · 45 km", lat:51.1537, lon:-0.1821, q:"Gatwick Airport", desc:"Vuelo W95724 desde Málaga. Pasaporte y ETA por las puertas automáticas. La maleta tarda 30–45 min: comprad la comida mientras (M&S, Boots o Pret, £5–8)."},
+  {t:"15:00", name:"London Victoria", kind:"transporte", lat:51.4952, lon:-0.1441, q:"London Victoria station", leg:{m:"tren", txt:"Tren Southern a Victoria · 35 min", cost:"£10,70"}, desc:"No entréis por los tornos del Gatwick Express (£24). Bajad al metro y coged la línea Circle."},
+  casa("15:30", "Dejad la maleta. Está a 3 min de Bayswater y a 5 de Queensway.", {m:"metro", txt:"Metro Circle · Victoria → Bayswater · 20 min", cost:"£3,00"}),
+  {t:"15:45", name:"Compra en el súper", short:"Compra", kind:"compra", lat:51.5185, lon:-0.1880, q:"Waitrose Bayswater Porchester Road", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Waitrose de Porchester Road (abre hasta las 22:00) para la compra grande; el Tesco Express de Queensway, para algo rápido. Llevad bolsa. A las 16:30, de vuelta a casa para dejarla."},
+  {t:"17:05", name:"The Churchill Arms", kind:"visita", lat:51.5069, lon:-0.1946, q:"The Churchill Arms Kensington", leg:{m:"pie", txt:"A pie por Bayswater Road y Kensington Church St · 20 min"}, desc:"El pub de la fachada de flores, con la decoración navideña puesta. Tomad algo dentro; su cocina es tailandesa."},
+  {t:"17:45", name:"Portobello Road y Blenheim Crescent", short:"Portobello", kind:"visita", lat:51.5155, lon:-0.2054, q:"The Notting Hill Bookshop", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"The Notting Hill Bookshop (13 Blenheim Crescent), Books for Cooks y la ropa de Y2K Vintage (217 Portobello Rd). Las tiendas cierran hacia las 18:00–18:30."},
+  {t:"19:00", name:"Cena en Notting Hill Gate", short:"Cena", kind:"comida", lat:51.5091, lon:-0.1965, q:"Notting Hill Gate restaurants", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Pizza, pasta o asiático. Más barato: los asiáticos de Queensway, al lado de casa. Capricho: Granger & Co. (175 Westbourne Grove)."},
+  casa("20:30", "", {m:"pie", txt:"A pie por Westbourne Grove · 15 min"}),
+  {t:"17:00–19:30", name:"Christmas at Kew", alt:true, xmas:true, kind:"navidad", off:"w", offLabel:"Kew · 40 min", lat:51.4787, lon:-0.2956, q:"Christmas at Kew", res:"Reserva · £25–30", desc:"Alternativa al Churchill Arms y Notting Hill: el recorrido de luces del jardín botánico. Metro District desde Bayswater con cambio en Earl's Court (£3–4 cada trayecto)."}
+ ]},
+ {id:"jue", short:"Jue 19", long:"Jueves 19 de noviembre", date:"2026-11-19", theme:"Westminster, free tour y Navidad en el West End", c:"--d2", cost:"£6,10", costNote:"2 trayectos", reservas:"Abadía 9:30 · free tour 11:15 · Somerset House 17:15 (opcional)", stops:[
+  casa("8:40", "Salid hacia la estación de Bayswater."),
+  {t:"9:00", name:"Big Ben y Westminster Bridge", short:"Big Ben", kind:"visita", lat:51.5007, lon:-0.1246, q:"Big Ben", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10"}, desc:"Fotos con el London Eye de fondo antes de que llegue la gente."},
+  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Coronaciones, Poets' Corner y tumbas reales. Llevad el carnet de estudiante."},
+  {t:"11:15", name:"Free tour: Westminster y zona real", short:"Free tour", kind:"visita", lat:51.5073, lon:-0.1277, q:"Charles I statue Trafalgar Square", res:"GuruWalk · propina £10–15", leg:{m:"pie", txt:"A pie por Whitehall · 10 min"}, desc:"Sale junto a la estatua de Carlos I, en Trafalgar Square, y recorre Whitehall, Horse Guards y St James's Park. Dura unas 2 h."},
+  {t:"13:15", name:"Buckingham Palace", short:"Buckingham", kind:"visita", lat:51.5014, lon:-0.1419, q:"Buckingham Palace", leg:{m:"tour", txt:"Con el free tour, a pie"}, desc:"Aquí termina el tour."},
+  {t:"13:30", name:"Comida en Piccadilly", short:"Comida", kind:"comida", lat:51.5098, lon:-0.1342, q:"Piccadilly Circus", leg:{m:"pie", txt:"A pie por Green Park · 15 min"}, desc:"Pret, Leon o un pub para un fish and chips (£12–18)."},
+  {t:"14:00", name:"National Gallery", kind:"visita", lat:51.5089, lon:-0.1283, q:"National Gallery London", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Gratis. Lo esencial: los Girasoles de Van Gogh, Turner, Velázquez y Monet."},
+  {t:"15:30", name:"Mercado navideño de Trafalgar Square", short:"Trafalgar", xmas:true, kind:"navidad", lat:51.5078, lon:-0.1286, q:"Trafalgar Square", leg:{m:"pie", txt:"A pie · 1 min"}, desc:"Las casetas están en la misma plaza, al salir del museo."},
+  {t:"15:45", name:"Covent Garden", xmas:true, kind:"navidad", lat:51.5117, lon:-0.1240, q:"Covent Garden Market", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Árbol gigante y adornos enormes en el mercado cubierto; luce más desde que oscurece, hacia las 16:00. Después, Neal's Yard y Seven Dials."},
+  {t:"17:15", name:"Patinaje en Somerset House", short:"Somerset House", xmas:true, opt:true, kind:"navidad", lat:51.5110, lon:-0.1172, q:"Skate at Somerset House", res:"Reserva · £15–28,50", leg:{m:"pie", txt:"A pie por el Strand · 10 min"}, desc:"Sesión de 45 min en el patio del árbol. Si no patináis, el patio se ve gratis."},
+  {t:"18:15", name:"Mercado navideño de Leicester Square", short:"Leicester Sq.", xmas:true, kind:"navidad", lat:51.5103, lon:-0.1301, q:"Leicester Square", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Casetas de madera, vino caliente y pista de hielo. Al lado, Piccadilly Circus iluminado."},
+  {t:"19:00", name:"Cena en Chinatown", short:"Cena", kind:"comida", lat:51.5115, lon:-0.1312, q:"Chinatown London", leg:{m:"pie", txt:"A pie · 3 min"}, desc:"Dumplings, ramen o bao (£10–15). Si vais a un musical a las 19:30, cenad antes y saltaos Somerset House."},
+  casa("21:00", "", {m:"metro", txt:"Metro Central · Tottenham Court Road → Queensway · 10 min", cost:"£3,00"})
+ ]},
+ {id:"vie", short:"Vie 20", long:"Viernes 20 de noviembre", date:"2026-11-20", theme:"La City, South Bank y Winter Wonderland", c:"--d3", cost:"£8,90", costNote:"4 trayectos con tope diario", reservas:"Torre 9:00 · Horizon 22 15:45 · Winter Wonderland 18:15", stops:[
+  casa("8:20", "Salid hacia la estación de Bayswater."),
+  {t:"9:00", name:"Torre de Londres", short:"Torre", kind:"visita", lat:51.5081, lon:-0.0759, q:"Tower of London", res:"Reserva · ~£29,50 estudiante", leg:{m:"metro", txt:"Metro Circle · Bayswater → Tower Hill · 35 min · hora punta", cost:"£3,10"}, desc:"Id primero a las Joyas de la Corona; después, la visita gratis con un Beefeater y la Torre Blanca."},
+  {t:"11:45", name:"Tower Bridge", kind:"visita", lat:51.5055, lon:-0.0754, q:"Tower Bridge", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Cruzadlo andando. La pasarela de cristal es de pago y opcional."},
+  {t:"12:45", name:"Borough Market", short:"Borough", kind:"comida", lat:51.5055, lon:-0.0910, q:"Borough Market", leg:{m:"pie", txt:"A pie por Queen's Walk · 15 min"}, desc:"Comida de puesto en puesto (£10–15). Id antes de las 13:00 para evitar lo peor."},
+  {t:"13:45", name:"Tate Modern", kind:"visita", lat:51.5076, lon:-0.0994, q:"Tate Modern", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Gratis. Subid al mirador de la planta 10 del edificio Blavatnik."},
+  {t:"15:00", name:"St Paul's", kind:"visita", lat:51.5138, lon:-0.0984, q:"St Paul's Cathedral", leg:{m:"pie", txt:"A pie por el Millennium Bridge · 10 min"}, desc:"Fotos de la cúpula desde el puente."},
+  {t:"15:45", name:"Horizon 22", kind:"visita", lat:51.5144, lon:-0.0832, q:"Horizon 22 London", res:"Reserva gratis", leg:{m:"metro", txt:"Metro Central · St Paul's → Bank + 5 min a pie", cost:"£3,00"}, desc:"Mirador gratis en la planta 58, más alto que el Shard. Atardecer hacia las 16:00: veis Londres de día y de noche."},
+  {t:"16:50", name:"Leadenhall Market", short:"Leadenhall", xmas:true, kind:"navidad", lat:51.5128, lon:-0.0838, q:"Leadenhall Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Mercado victoriano cubierto con luces de Navidad."},
+  {t:"18:15", name:"Hyde Park Winter Wonderland", short:"Winter Wonderland", xmas:true, kind:"navidad", lat:51.5060, lon:-0.1560, q:"Hyde Park Winter Wonderland", res:"Reserva · £1–8,25", leg:{m:"metro", txt:"Metro Central · Bank → Marble Arch · 12 min · hora punta", cost:"£3,10"}, desc:"Mercadillos, pista de hielo y noria. Las atracciones y la comida se pagan aparte (ponche, unas £8)."},
+  casa("21:00", "", {m:"metro", txt:"Metro Central · Marble Arch → Queensway · 2 paradas", cost:"£3,00 → tope £8,90"}),
+  {t:"15:45", name:"The Garden at 120", alt:true, kind:"visita", lat:51.5118, lon:-0.0817, q:"The Garden at 120 Fenchurch Street", desc:"Plan B si Horizon 22 está lleno: azotea gratis y sin reserva, abierta hasta las 18:30 entre semana."}
+ ]},
+ {id:"sab", short:"Sáb 21", long:"Sábado 21 de noviembre", date:"2026-11-21", theme:"Kensington, Portobello y luces de Navidad", c:"--d4", cost:"£6,00", costNote:"2 trayectos", reservas:"Musical (opcional)", stops:[
+  casa("8:30", "Desayuno en casa con la compra del miércoles."),
+  {t:"9:00", name:"Kensington Gardens", short:"Kensington G.", kind:"visita", lat:51.5058, lon:-0.1817, q:"Round Pond Kensington Gardens", leg:{m:"pie", txt:"A pie hasta Black Lion Gate · 5 min"}, desc:"Round Pond, Kensington Palace e Italian Gardens con luz de mañana."},
+  {t:"9:50", name:"Café en GAIL's", short:"GAIL's", kind:"comida", lat:51.5133, lon:-0.2027, q:"GAIL's Bakery Portobello Road", leg:{m:"pie", txt:"A pie por Kensington Church Street · 20 min"}, desc:"Café para llevar en el 138 de Portobello Road."},
+  {t:"10:15", name:"Calles de colores", short:"Colores", kind:"visita", lat:51.5176, lon:-0.2048, q:"Lancaster Road Notting Hill", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Lancaster Road → St Luke's Mews (residencial, hablad bajo) → Westbourne Park Road → Colville Terrace."},
+  {t:"11:00", name:"Mercado de Portobello Road", short:"Portobello", kind:"visita", lat:51.5153, lon:-0.2050, q:"Portobello Road Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"El sábado está entero: antigüedades al principio, comida y ropa más abajo. Comed en los puestos hacia las 12:45 (£8–12)."},
+  {t:"14:00", name:"British Museum", kind:"visita", lat:51.5194, lon:-0.1270, q:"British Museum", leg:{m:"metro", txt:"Metro Central · Notting Hill Gate → Tottenham Court Road + 10 min a pie", cost:"£3,00"}, desc:"Gratis; cierra a las 17:00. Piedra de Rosetta, momias egipcias y mármoles del Partenón."},
+  {t:"16:15", name:"Escaparates de Liberty y Hamleys", short:"Liberty", xmas:true, kind:"navidad", lat:51.5139, lon:-0.1400, q:"Liberty London", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Liberty, la tienda de madera estilo Tudor, tiene planta de Navidad; Hamleys es la juguetería gigante de Regent Street."},
+  {t:"17:15", name:"Luces de Carnaby y Regent Street", short:"Regent St.", xmas:true, kind:"navidad", lat:51.5113, lon:-0.1376, q:"Regent Street Christmas lights", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Los ángeles iluminados de Regent Street y las luces de Carnaby, este año de temática noventera."},
+  {t:"18:15", name:"Escaparates de Fortnum & Mason", short:"Fortnum", xmas:true, opt:true, kind:"navidad", lat:51.5081, lon:-0.1385, q:"Fortnum & Mason Piccadilly", leg:{m:"pie", txt:"A pie bajando Regent Street · 10 min"}, desc:"En Piccadilly. Sus escaparates de Navidad son famosos."},
+  {t:"19:00", name:"Cena en Soho", short:"Cena", kind:"comida", lat:51.5130, lon:-0.1393, q:"Kingly Court London", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Kingly Court, junto a Carnaby: muchos restaurantes de precio medio. Musical opcional a las 19:30."},
+  casa("21:30", "", {m:"metro", txt:"Metro Central · Oxford Circus → Queensway · 10 min", cost:"£3,00"}),
+  {t:"19:00", name:"Southbank Centre Winter Market", short:"Southbank", alt:true, xmas:true, kind:"navidad", lat:51.5050, lon:-0.1170, q:"Southbank Centre Winter Market", desc:"Alternativa para cenar: puestos de comida junto al London Eye, a 20 min andando desde Piccadilly. Para volver, Bakerloo de Embankment a Oxford Circus y allí la Central."}
+ ]},
+ {id:"dom", short:"Dom 22", long:"Domingo 22 de noviembre", date:"2026-11-22", theme:"East End y vuelta por Stansted", c:"--d5", cost:"£12,90", costNote:"+ consigna £3–5", reservas:"Stansted Express 12:25", stops:[
+  casa("8:30", "Check-out. Salid con la maleta hacia Queensway."),
+  {t:"9:00", name:"Liverpool Street · consigna", short:"Liverpool St", kind:"transporte", lat:51.5178, lon:-0.0823, q:"London Liverpool Street station", leg:{m:"metro", txt:"Metro Central · Queensway → Liverpool Street · 20 min", cost:"£3,00"}, desc:"Dejad la maleta en la consigna junto al andén 10 (de 7:00 a 23:00) o en Stasher o Bounce, desde £3–5."},
+  {t:"9:15", name:"Columbia Road Flower Market", short:"Columbia Rd", kind:"visita", lat:51.5296, lon:-0.0709, q:"Columbia Road Flower Market", leg:{m:"pie", txt:"A pie · 20 min"}, desc:"Solo los domingos, de 8:00 a 15:00: la calle entera llena de flores. Llevad algo de efectivo."},
+  {t:"10:15", name:"Brick Lane · Beigel Bake", short:"Brick Lane", kind:"comida", lat:51.5246, lon:-0.0718, q:"Beigel Bake Brick Lane", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Grafitis, tiendas vintage y el bagel de salt beef de Beigel Bake (159 Brick Lane)."},
+  {t:"11:15", name:"Mercado navideño de Old Spitalfields", short:"Spitalfields", xmas:true, kind:"navidad", lat:51.5196, lon:-0.0753, q:"Old Spitalfields Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Mercado cubierto con puestos de diseño y comida. Buen sitio para comer antes del tren."},
+  {t:"12:05", name:"Liverpool Street · recoger la maleta", short:"Maleta", kind:"transporte", lat:51.5172, lon:-0.0813, q:"London Liverpool Street station", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Tren a las 12:25. El Stansted Express no se paga con contactless: llevad el billete comprado."},
+  {t:"13:15", name:"Aeropuerto de Stansted", kind:"transporte", off:"ne", offLabel:"Stansted · 55 km", lat:51.8860, lon:0.2389, q:"London Stansted Airport", leg:{m:"tren", txt:"Stansted Express · 48 min", cost:"desde £9,90"}, desc:"Entregad la maleta en Ryanair antes de las 15:20 (60 min antes del vuelo). Vuelo FR5127 a las 16:20; la puerta cierra a las 15:50."}
+ ]}
+];
+
+var CHECKS = [
+ ["eta", "ETA para entrar en Reino Unido (£20 por persona)", "ya"],
+ ["checkin-wizz", "Check-in de Wizz Air en la app", "antes del 18"],
+ ["abadia", "Abadía de Westminster, entrada de estudiante", "jue 9:30"],
+ ["freetour", "Free tour en español (GuruWalk)", "jue 11:15"],
+ ["torre", "Torre de Londres, entrada de estudiante", "vie 9:00"],
+ ["horizon", "Horizon 22 (gratis)", "vie 15:45"],
+ ["ww", "Hyde Park Winter Wonderland", "vie 18:15"],
+ ["stx", "Stansted Express (Advance o Duo)", "dom 12:25"],
+ ["checkin-ry", "Check-in de Ryanair (se abre 24 h antes)", "sáb 16:20"],
+ ["somerset", "Opcional: patinaje en Somerset House", "jue 17:15"],
+ ["musical", "Opcional: musical en TodayTix", "jue o sáb"]
+];
+
+/* ---------- Proyección del mapa ---------- */
+var B = {lon0:-0.215, lon1:-0.060, lat0:51.474, lat1:51.534, W:1000, H:620};
+function P(lat, lon){ return [(lon - B.lon0) / (B.lon1 - B.lon0) * B.W, (B.lat1 - lat) / (B.lat1 - B.lat0) * B.H]; }
+var KM = B.W / ((B.lon1 - B.lon0) * 111.32 * Math.cos(51.504 * Math.PI / 180));
+
+var RIVER = [[51.4745,-0.215],[51.4740,-0.200],[51.4765,-0.183],[51.4810,-0.170],[51.4848,-0.155],[51.4838,-0.145],[51.4858,-0.135],[51.4880,-0.127],[51.4950,-0.1225],[51.5020,-0.1210],[51.5065,-0.1195],[51.5090,-0.1150],[51.5097,-0.1040],[51.5097,-0.0950],[51.5080,-0.0880],[51.5070,-0.0800],[51.5055,-0.0740],[51.5040,-0.0650],[51.5048,-0.0560]];
+var PARKS = [
+ [[51.5106,-0.1880],[51.5118,-0.1760],[51.5131,-0.1590],[51.5100,-0.1553],[51.5030,-0.1515],[51.5023,-0.1680],[51.5017,-0.1800],[51.5020,-0.1885]],
+ [[51.5070,-0.1495],[51.5068,-0.1412],[51.5042,-0.1402],[51.5022,-0.1452]],
+ [[51.5040,-0.1400],[51.5050,-0.1300],[51.5022,-0.1290],[51.5015,-0.1385]],
+ [[51.5236,-0.1655],[51.5236,-0.1450],[51.5345,-0.1450],[51.5345,-0.1655]]
+];
+var SERPENTINE = [[51.5072,-0.1765],[51.5058,-0.1705],[51.5046,-0.1645],[51.5052,-0.1608]];
+var AREAS = [
+ [51.5196,-0.2000,"Notting Hill"], [51.5150,-0.1835,"Bayswater"], [51.5088,-0.1680,"Hyde Park"], [51.4975,-0.1360,"Westminster"],
+ [51.5160,-0.1330,"Soho"], [51.5225,-0.1230,"Bloomsbury"], [51.5170,-0.0925,"La City"], [51.5025,-0.1080,"South Bank"],
+ [51.5275,-0.0810,"Shoreditch"], [51.4895,-0.1555,"Támesis"], [51.5280,-0.1555,"Regent's Park"]
+];
+
+/* ---------- Estado ---------- */
+var state = {view:"todo", active:null, vb:null, anim:0};
+var done = load("londres-hechos", []);
+var checks = load("londres-reservas", []);
+function load(key, def){ try{ var v = JSON.parse(localStorage.getItem(key)); return Array.isArray(v) ? v : def; }catch(e){ return def; } }
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+DAYS.forEach(function(d){
+  var n = 0, a = 0;
+  d.stops.forEach(function(s, i){
+    s.id = d.id + "-" + i; s.day = d;
+    if (s.alt) s.num = String.fromCharCode(65 + a++);
+    else if (!s.home) s.num = String(++n);
+  });
+});
+function findStop(id){ for (var i = 0; i < DAYS.length; i++){ for (var j = 0; j < DAYS[i].stops.length; j++){ if (DAYS[i].stops[j].id === id) return DAYS[i].stops[j]; } } return null; }
+function dayById(id){ for (var i = 0; i < DAYS.length; i++) if (DAYS[i].id === id) return DAYS[i]; return null; }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+/* ---------- Enlaces ---------- */
+function mapsUrl(s){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent((s.q || s.name) + (s.home ? "" : ", London")); }
+function photosUrl(s){ return "https://www.google.com/search?tbm=isch&q=" + encodeURIComponent((s.q || s.name) + " London"); }
+function dirUrl(from, to, mode){ return "https://www.google.com/maps/dir/?api=1&origin=" + from.lat + "," + from.lon + "&destination=" + to.lat + "," + to.lon + "&travelmode=" + mode; }
+function dayRouteUrl(d){
+  var pts = [], last = "";
+  d.stops.forEach(function(s){ if (s.alt) return; var k = s.lat.toFixed(4) + "," + s.lon.toFixed(4); if (k !== last) pts.push(k); last = k; });
+  return "https://www.google.com/maps/dir/" + pts.join("/");
+}
+
+/* ---------- Encuadre ---------- */
+function mapSize(){ var m = document.getElementById("map"); return {w: m.clientWidth || 600, h: m.clientHeight || 400}; }
+function fitBox(b){
+  var sz = mapSize(), a = sz.w / sz.h;
+  var w = b.x1 - b.x0, h = b.y1 - b.y0;
+  var pad = Math.max(w, h) * 0.12 + 34;
+  w += pad * 2; h += pad * 2; w = Math.max(w, 230); h = Math.max(h, 150);
+  if (w / h < a) w = h * a; else h = w / a;
+  var cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+  return {x: cx - w / 2, y: cy - h / 2, w: w, h: h};
+}
+function targetVB(){
+  if (state.view === "todo"){
+    var sz = mapSize(), a = sz.w / sz.h, w = B.W, h = B.H;
+    if (w / h < a) w = h * a; else h = w / a;
+    return {x: B.W / 2 - w / 2, y: B.H / 2 - h / 2, w: w, h: h};
+  }
+  var d = dayById(state.view), b = {x0:Infinity, y0:Infinity, x1:-Infinity, y1:-Infinity};
+  function add(x, y){ b.x0 = Math.min(b.x0, x); b.y0 = Math.min(b.y0, y); b.x1 = Math.max(b.x1, x); b.y1 = Math.max(b.y1, y); }
+  d.stops.forEach(function(s, i){
+    if (!s.off){ var p = P(s.lat, s.lon); add(p[0], p[1]); return; }
+    var nb = s.alt ? P(CASA.lat, CASA.lon) : (i > 0 && !d.stops[i-1].off ? P(d.stops[i-1].lat, d.stops[i-1].lon) : P(d.stops[i+1].lat, d.stops[i+1].lon));
+    if (s.off === "s") add(nb[0], nb[1] + 70);
+    if (s.off === "w") add(nb[0] - 110, nb[1]);
+    if (s.off === "ne") add(nb[0] + 60, nb[1] - 60);
+  });
+  return fitBox(b);
+}
+function goVB(target){
+  cancelAnimationFrame(state.anim);
+  if (!state.vb || reduce){ state.vb = target; draw(); return; }
+  var from = state.vb, t0 = performance.now(), dur = 520;
+  function step(now){
+    var t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    state.vb = {x: from.x + (target.x - from.x) * e, y: from.y + (target.y - from.y) * e, w: from.w + (target.w - from.w) * e, h: from.h + (target.h - from.h) * e};
+    draw();
+    if (t < 1) state.anim = requestAnimationFrame(step);
+  }
+  state.anim = requestAnimationFrame(step);
+}
+
+/* ---------- Dibujo ---------- */
+function pts(list){ return list.map(function(p){ var q = P(p[0], p[1]); return q[0].toFixed(1) + "," + q[1].toFixed(1); }).join(" "); }
+function offPos(s, anchor, vb, k){
+  var arrow = s.off === "s" ? "↓ " : s.off === "w" ? "← " : "↗ ";
+  var label = arrow + s.offLabel, wpx = label.length * 6.6 + 22, w = wpx * k, h = 22 * k, x, y;
+  var clamp = function(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); };
+  if (s.off === "s"){ x = clamp(anchor[0], vb.x + w / 2 + 10 * k, vb.x + vb.w - w / 2 - 10 * k); y = vb.y + vb.h - h / 2 - 12 * k; }
+  else if (s.off === "w"){ x = vb.x + w / 2 + 10 * k; y = clamp(anchor[1], vb.y + h, vb.y + vb.h - h); }
+  else { x = vb.x + vb.w - w / 2 - 10 * k; y = vb.y + h / 2 + 12 * k; }
+  return {x: x, y: y, wpx: wpx, label: label};
+}
+function geometry(d, vb, k){
+  var out = [];
+  d.stops.forEach(function(s){ if (!s.off){ var p = P(s.lat, s.lon); out.push({s: s, x: p[0], y: p[1]}); } else out.push({s: s, off: true}); });
+  out.forEach(function(g, i){
+    if (!g.off) return;
+    var nb;
+    if (g.s.alt) nb = P(CASA.lat, CASA.lon);
+    else { var prev = out[i-1], next = out[i+1]; var a = (prev && !prev.off && !prev.s.alt) ? prev : next; nb = [a.x, a.y]; }
+    var o = offPos(g.s, nb, vb, k); g.x = o.x; g.y = o.y; g.wpx = o.wpx; g.label = o.label;
+  });
+  return out;
+}
+
+function draw(){
+  var vb = state.vb, sz = mapSize(), k = vb.w / sz.w, o = [];
+  o.push('<svg viewBox="' + [vb.x, vb.y, vb.w, vb.h].map(function(v){ return v.toFixed(2); }).join(" ") + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa esquemático de Londres con la ruta">');
+  o.push('<rect x="' + (vb.x - 50) + '" y="' + (vb.y - 50) + '" width="' + (vb.w + 100) + '" height="' + (vb.h + 100) + '" fill="var(--land)"/>');
+  // cuadrícula de 1 km
+  o.push('<g stroke="var(--grid)" stroke-width="' + (1 * k) + '">');
+  for (var gx = Math.floor(vb.x / KM) * KM; gx < vb.x + vb.w; gx += KM) o.push('<line x1="' + gx + '" y1="' + vb.y + '" x2="' + gx + '" y2="' + (vb.y + vb.h) + '"/>');
+  for (var gy = Math.floor(vb.y / KM) * KM; gy < vb.y + vb.h; gy += KM) o.push('<line x1="' + vb.x + '" y1="' + gy + '" x2="' + (vb.x + vb.w) + '" y2="' + gy + '"/>');
+  o.push('</g>');
+  PARKS.forEach(function(p){ o.push('<polygon points="' + pts(p) + '" fill="var(--park)" stroke="var(--park)" stroke-width="6" stroke-linejoin="round"/>'); });
+  o.push('<polyline points="' + pts(RIVER) + '" fill="none" stroke="var(--river)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>');
+  o.push('<polyline points="' + pts(SERPENTINE) + '" fill="none" stroke="var(--river)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>');
+  AREAS.forEach(function(a){
+    var p = P(a[0], a[1]);
+    o.push('<g transform="translate(' + p[0] + ' ' + p[1] + ') scale(' + k + ')"><text text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--muted)" opacity=".75" font-family="var(--f-body)" letter-spacing=".3">' + esc(a[2]) + '</text></g>');
+  });
+
+  var days = state.view === "todo" ? DAYS : [dayById(state.view)];
+  var full = state.view !== "todo";
+
+  // rutas
+  days.forEach(function(d){
+    var g = geometry(d, vb, k), col = "var(" + d.c + ")", prev = null;
+    g.forEach(function(p){
+      if (p.s.alt) return;
+      if (prev){
+        var m = p.s.leg ? p.s.leg.m : "pie", solid = (m === "metro" || m === "tren");
+        var sw = (full ? (solid ? 5 : 3) : (solid ? 3 : 2)) * k;
+        o.push('<line x1="' + prev.x + '" y1="' + prev.y + '" x2="' + p.x + '" y2="' + p.y + '" stroke="' + col + '" stroke-width="' + sw + '" stroke-linecap="round"' + (solid ? '' : ' stroke-dasharray="' + (6 * k) + ' ' + (5 * k) + '"') + ' opacity="' + (full ? 1 : .85) + '"/>');
+      }
+      prev = p;
+    });
+    if (full){
+      g.forEach(function(p){
+        if (!p.s.alt) return;
+        var h = P(CASA.lat, CASA.lon);
+        if (p.s.off) o.push('<line x1="' + h[0] + '" y1="' + h[1] + '" x2="' + p.x + '" y2="' + p.y + '" stroke="' + col + '" stroke-width="' + (2 * k) + '" stroke-dasharray="' + (2 * k) + ' ' + (5 * k) + '" stroke-linecap="round" opacity=".8"/>');
+      });
+    }
+    // pastillas fuera del mapa
+    g.forEach(function(p){
+      if (!p.off) return;
+      if (!full && p.s.alt) return;
+      var active = state.active === p.s.id;
+      o.push('<g class="mk" data-id="' + p.s.id + '" tabindex="0" role="button" aria-label="' + esc(p.s.name) + '" transform="translate(' + p.x + ' ' + p.y + ') scale(' + k + ')">' +
+        '<rect x="' + (-p.wpx / 2) + '" y="-11" width="' + p.wpx + '" height="22" rx="11" fill="var(--surface)" stroke="' + col + '" stroke-width="' + (active ? 2.5 : 1.5) + '"' + (p.s.alt ? ' stroke-dasharray="4 3"' : '') + '/>' +
+        '<text text-anchor="middle" y="4" font-size="11.5" font-weight="600" fill="var(--fg)" font-family="var(--f-body)">' + esc(p.label) + '</text></g>');
+    });
+  });
+
+  // casa
+  var hp = P(CASA.lat, CASA.lon);
+  o.push('<g class="mk" data-id="casa" transform="translate(' + hp[0] + ' ' + hp[1] + ') scale(' + k + ')" aria-hidden="true"><rect x="-12" y="-12" width="24" height="24" rx="6" fill="var(--fg)" stroke="var(--land)" stroke-width="2"/><path d="M-7 0.5 0 -6 7 0.5V7H2.5V2.5h-5V7H-7z" fill="var(--land)"/></g>');
+
+  // paradas
+  days.forEach(function(d){
+    var g = geometry(d, vb, k), col = "var(" + d.c + ")";
+    g.forEach(function(p){
+      var s = p.s;
+      if (p.off || s.home) return;
+      if (!full && s.alt) return;
+      var isDone = done.indexOf(s.id) >= 0, active = state.active === s.id;
+      if (!full){
+        o.push('<g class="mk" data-id="' + s.id + '" tabindex="-1" transform="translate(' + p.x + ' ' + p.y + ') scale(' + k + ')"><circle r="5.5" fill="' + col + '" stroke="var(--land)" stroke-width="1.5"/>' + (s.xmas ? '<circle r="8" fill="none" stroke="var(--gold)" stroke-width="1.5"/>' : '') + '</g>');
+        return;
+      }
+      var r = active ? 13 : 10.5;
+      var fill = s.alt ? "var(--surface)" : (isDone ? "var(--muted)" : col);
+      var txtCol = s.alt ? "var(--fg)" : "var(--on-line)";
+      o.push('<g class="mk" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' + esc(s.num + ". " + s.name) + '" transform="translate(' + p.x + ' ' + p.y + ') scale(' + k + ')">' +
+        (s.xmas ? '<circle r="' + (r + 4) + '" fill="var(--land)" stroke="var(--gold)" stroke-width="2"/>' : '') +
+        '<circle r="' + r + '" fill="' + fill + '" stroke="' + (s.alt ? col : "var(--land)") + '" stroke-width="2"' + (s.alt ? ' stroke-dasharray="3 2.5"' : '') + '/>' +
+        '<text text-anchor="middle" y="' + (active ? 4.5 : 3.8) + '" font-size="' + (active ? 13 : 11) + '" font-weight="700" fill="' + txtCol + '" font-family="var(--f-body)">' + (isDone && !s.alt ? "✓" : s.num) + '</text></g>');
+    });
+  });
+
+  // etiqueta de la parada activa
+  if (full && state.active){
+    var s = findStop(state.active);
+    if (s && !s.off && !s.home){
+      var p2 = P(s.lat, s.lon), name = s.short || s.name;
+      var right = p2[0] + 20 * k + name.length * 7 * k < vb.x + vb.w;
+      o.push('<g transform="translate(' + p2[0] + ' ' + p2[1] + ') scale(' + k + ')" pointer-events="none"><text x="' + (right ? 19 : -19) + '" y="4.5" text-anchor="' + (right ? "start" : "end") + '" font-size="13" font-weight="700" fill="var(--fg)" stroke="var(--land)" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-family="var(--f-body)">' + esc(name) + '</text></g>');
+    }
+  }
+
+  // escala y norte
+  var len = vb.w < 420 ? KM / 2 : KM, lab = vb.w < 420 ? "500 m" : "1 km";
+  var sx = vb.x + vb.w - 16 * k - len, sy = vb.y + vb.h - 16 * k;
+  o.push('<g stroke="var(--fg)" stroke-width="' + (1.5 * k) + '" opacity=".7"><line x1="' + sx + '" y1="' + sy + '" x2="' + (sx + len) + '" y2="' + sy + '"/><line x1="' + sx + '" y1="' + (sy - 4 * k) + '" x2="' + sx + '" y2="' + sy + '"/><line x1="' + (sx + len) + '" y1="' + (sy - 4 * k) + '" x2="' + (sx + len) + '" y2="' + sy + '"/></g>');
+  o.push('<g transform="translate(' + (sx + len / 2) + ' ' + (sy - 7 * k) + ') scale(' + k + ')"><text text-anchor="middle" font-size="10.5" fill="var(--fg)" opacity=".75" font-family="var(--f-mono)">' + lab + '</text></g>');
+  o.push('<g transform="translate(' + (vb.x + 18 * k) + ' ' + (vb.y + 22 * k) + ') scale(' + k + ')" opacity=".7"><path d="M0 -10 5 4 0 1 -5 4Z" fill="var(--fg)"/><text y="16" text-anchor="middle" font-size="10" font-weight="700" fill="var(--fg)" font-family="var(--f-mono)">N</text></g>');
+  o.push('</svg>');
+  document.getElementById("map").innerHTML = o.join("");
+}
+
+/* ---------- Lista ---------- */
+var HOUSE = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 7.5 8 1.8l6.5 5.7V14.5H10V10H6v4.5H1.5z" fill="currentColor"/></svg>';
+var MODE = {metro:"Metro", tren:"Tren", pie:"A pie", tour:"Free tour"};
+
+function stopHTML(s, prev){
+  var isDone = done.indexOf(s.id) >= 0, h = [];
+  h.push('<li class="stop' + (isDone ? " done" : "") + (state.active === s.id ? " is-active" : "") + '" data-stop="' + s.id + '">');
+  if (s.leg && !s.alt) h.push('<div class="leg"><span class="mode ' + s.leg.m + '">' + MODE[s.leg.m] + '</span><span>' + esc(s.leg.txt) + '</span>' + (s.leg.cost ? '<span class="cost">' + esc(s.leg.cost) + '</span>' : '') + '</div>');
+  var cls = "badge" + (s.home ? " home" : "") + (s.xmas ? " xmas" : "") + (s.alt ? " alt" : "");
+  h.push('<span class="' + cls + '" aria-hidden="true">' + (s.home ? HOUSE : (isDone && !s.alt ? "✓" : s.num)) + '</span>');
+  h.push('<article class="card"><div class="meta"><time>' + esc(s.t) + '</time>');
+  if (s.xmas) h.push('<span class="chip xmas">Navidad</span>');
+  if (s.res) h.push('<span class="chip res">' + esc(s.res) + '</span>');
+  if (s.opt) h.push('<span class="chip opt">Opcional</span>');
+  if (s.alt) h.push('<span class="chip opt">Alternativa</span>');
+  h.push('</div><h3>' + esc(s.home ? "Casa" : s.name) + '</h3>');
+  if (s.desc) h.push('<p>' + esc(s.desc) + '</p>');
+  h.push('<div class="links"><a href="' + mapsUrl(s) + '">Abrir en Google Maps</a>');
+  if (prev && !s.alt){
+    var mode = (s.leg && (s.leg.m === "pie" || s.leg.m === "tour")) ? "walking" : "transit";
+    if (!(prev.lat === s.lat && prev.lon === s.lon)) h.push('<a href="' + dirUrl(prev, s, mode) + '">Cómo llegar</a>');
+  }
+  if (!s.home) h.push('<a href="' + photosUrl(s) + '">Fotos</a>');
+  if (!s.home && !s.alt) h.push('<button type="button" class="done-btn" data-done="' + s.id + '" aria-pressed="' + isDone + '">' + (isDone ? "Hecho" : "Marcar como hecho") + '</button>');
+  h.push('</div></article></li>');
+  return h.join("");
+}
+
+function renderList(){
+  var el = document.getElementById("list"), h = [];
+  if (state.view === "todo"){
+    h.push('<section class="intro"><h2>Cinco días, cinco líneas</h2><p>Cada día es una línea de color en el mapa. Abre un día para ver sus paradas en orden, con el transporte y lo que cuesta cada trayecto por persona.</p></section>');
+    h.push('<div class="daycards">');
+    DAYS.forEach(function(d){
+      var n = d.stops.filter(function(s){ return !s.home && !s.alt; }).length;
+      var x = d.stops.filter(function(s){ return s.xmas && !s.alt; }).length;
+      h.push('<button type="button" class="daycard" data-go="' + d.id + '" style="--c:var(' + d.c + ')"><span class="dc-top"><svg width="30" height="10" aria-hidden="true"><line x1="2" y1="5" x2="28" y2="5" stroke="var(' + d.c + ')" stroke-width="4" stroke-linecap="round"/><circle cx="15" cy="5" r="4" fill="var(' + d.c + ')" stroke="var(--surface)" stroke-width="1.5"/></svg>' + d.short + '</span><span class="dc-title">' + esc(d.theme) + '</span><span class="dc-meta">' + n + ' paradas · ' + (x ? x + ' navideñas · ' : '') + 'transporte ' + d.cost + '</span></button>');
+    });
+    h.push('</div>');
+    h.push('<section class="block"><h3 class="sec">Reservas y trámites</h3><ul class="checks">');
+    CHECKS.forEach(function(c){
+      var on = checks.indexOf(c[0]) >= 0;
+      h.push('<li><label for="chk-' + c[0] + '"><input type="checkbox" id="chk-' + c[0] + '" data-check="' + c[0] + '"' + (on ? " checked" : "") + '><span>' + esc(c[1]) + '</span><span class="when">' + esc(c[2]) + '</span></label></li>');
+    });
+    h.push('</ul></section>');
+    h.push('<section class="block"><h3 class="sec">Gasto estimado por persona</h3><table class="budget"><tbody>' +
+      '<tr><td>Transporte<span class="sub">Aeropuertos incluidos; con contactless y tope diario</span></td><td class="n">£47,60</td></tr>' +
+      '<tr><td>Entradas con precio de estudiante<span class="sub">Abadía, Torre y Winter Wonderland</span></td><td class="n">£63</td></tr>' +
+      '<tr><td>Propina del free tour</td><td class="n">£10–15</td></tr>' +
+      '<tr><td>Comida y bebida<span class="sub">£30–40 al día, desayunos en casa</span></td><td class="n">£135–180</td></tr>' +
+      '<tr><td>ETA<span class="sub">Si aún no la tenéis</span></td><td class="n">£20</td></tr>' +
+      '<tr class="total"><td>Total aproximado</td><td class="n">£280–325<span class="sub">≈ €330–380</span></td></tr>' +
+      '</tbody></table></section>');
+    h.push('<p class="foot">Las casillas y las paradas hechas se guardan en el navegador donde abras este archivo.</p>');
+  } else {
+    var d = dayById(state.view);
+    h.push('<header class="dayhead" style="--c:var(' + d.c + ')"><p class="eyebrow">' + esc(d.long) + '</p><h2>' + esc(d.theme) + '</h2>');
+    h.push('<div class="facts"><span class="fact">Transporte <b>' + d.cost + '</b> por persona · ' + esc(d.costNote) + '</span><span class="fact">Reservas: ' + esc(d.reservas) + '</span></div>');
+    h.push('<a class="btn" href="' + dayRouteUrl(d) + '">Abrir la ruta del día en Google Maps ↗</a></header>');
+    h.push('<ol class="stops" style="--c:var(' + d.c + ')">');
+    var prev = null;
+    d.stops.forEach(function(s){ if (s.alt) return; h.push(stopHTML(s, prev)); prev = s; });
+    h.push('</ol>');
+    var alts = d.stops.filter(function(s){ return s.alt; });
+    if (alts.length){
+      h.push('<section class="alts"><h3 class="sec">Alternativas</h3><ol class="stops" style="--c:var(' + d.c + ')">');
+      alts.forEach(function(s){ h.push(stopHTML(s, null)); });
+      h.push('</ol></section>');
+    }
+    var i = DAYS.indexOf(d), nx = DAYS[i + 1];
+    h.push('<p class="foot">' + (nx ? '<button type="button" class="btn" data-go="' + nx.id + '">Siguiente: ' + nx.short + ' →</button>' : '<button type="button" class="btn" data-go="todo">Ver el viaje completo</button>') + '</p>');
+  }
+  el.innerHTML = h.join("");
+}
+
+function renderTabs(){
+  var t = ['<button type="button" class="tab" data-go="todo" style="--c:var(--fg)" aria-current="' + (state.view === "todo") + '">Todo el viaje</button>'];
+  DAYS.forEach(function(d){ t.push('<button type="button" class="tab" data-go="' + d.id + '" style="--c:var(' + d.c + ')" aria-current="' + (state.view === d.id) + '"><span class="dot"></span>' + d.short + '</button>'); });
+  document.getElementById("tabs").innerHTML = t.join("");
+  var cur = document.querySelector('.tab[aria-current="true"]');
+  if (cur && cur.scrollIntoView) cur.scrollIntoView({block: "nearest", inline: "nearest"});
+}
+
+/* ---------- Navegación ---------- */
+function go(view, active, scroll){
+  if (view !== "todo" && !dayById(view)) view = "todo";
+  var changed = state.view !== view;
+  state.view = view; state.active = active || null;
+  if (location.hash !== "#" + view){ try{ history.replaceState(null, "", "#" + view); }catch(e){ location.hash = view; } }
+  renderTabs(); renderList();
+  goVB(targetVB());
+  if (changed && !active){ var top = document.querySelector(".layout"); if (top && window.scrollY > top.offsetTop) window.scrollTo({top: top.offsetTop - 8, behavior: reduce ? "auto" : "smooth"}); }
+  if (active && scroll) scrollToStop(active);
+}
+function setActive(id, scroll){
+  state.active = id;
+  document.querySelectorAll(".stop").forEach(function(li){ li.classList.toggle("is-active", li.getAttribute("data-stop") === id); });
+  draw();
+  if (scroll) scrollToStop(id);
+}
+function ensureMapVisible(){
+  if (window.innerWidth >= 920) return;
+  var m = document.getElementById("map"), r = m.getBoundingClientRect();
+  if (r.bottom < 60 || r.top > window.innerHeight - 60) m.scrollIntoView({block: "start", behavior: reduce ? "auto" : "smooth"});
+}
+function scrollToStop(id){ var li = document.querySelector('[data-stop="' + id + '"]'); if (li) li.scrollIntoView({block: "start", behavior: reduce ? "auto" : "smooth"}); }
+
+document.addEventListener("click", function(e){
+  var t = e.target;
+  var goEl = t.closest("[data-go]"); if (goEl){ go(goEl.getAttribute("data-go")); return; }
+  var dn = t.closest("[data-done]");
+  if (dn){
+    var id = dn.getAttribute("data-done"), i = done.indexOf(id);
+    if (i >= 0) done.splice(i, 1); else done.push(id);
+    save("londres-hechos", done); renderList(); draw(); return;
+  }
+  if (t.closest("a")) return;
+  var mk = t.closest(".mk[data-id]");
+  if (mk){
+    var mid = mk.getAttribute("data-id"); if (mid === "casa") return;
+    var s = findStop(mid);
+    if (state.view === "todo" && s) go(s.day.id, mid, true); else setActive(mid, true);
+    return;
+  }
+  var li = t.closest("[data-stop]"); if (li){ setActive(li.getAttribute("data-stop"), false); ensureMapVisible(); }
+});
+document.addEventListener("keydown", function(e){
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("mk")){ e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", {bubbles: true})); }
+});
+document.addEventListener("change", function(e){
+  var c = e.target.getAttribute && e.target.getAttribute("data-check"); if (!c) return;
+  var i = checks.indexOf(c);
+  if (e.target.checked && i < 0) checks.push(c); if (!e.target.checked && i >= 0) checks.splice(i, 1);
+  save("londres-reservas", checks);
+});
+window.addEventListener("hashchange", function(){ var v = location.hash.slice(1); if (v && v !== state.view) go(v); });
+if (window.ResizeObserver) new ResizeObserver(function(){ if (!state.vb) return; cancelAnimationFrame(state.anim); state.vb = targetVB(); draw(); }).observe(document.getElementById("map"));
+
+/* ---------- Cuenta atrás ---------- */
+var today;
+try { today = new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit"}).format(new Date()); } catch(e){ today = new Date().toISOString().slice(0, 10); }
+var diff = Math.round((Date.parse("2026-11-18") - Date.parse(today)) / 864e5), todayDay = null;
+DAYS.forEach(function(d, i){ if (d.date === today) todayDay = {d: d, i: i}; });
+var countEl = document.getElementById("count");
+if (todayDay) countEl.textContent = "Hoy: día " + (todayDay.i + 1) + " de 5";
+else if (diff > 1) countEl.textContent = "Faltan " + diff + " días";
+else if (diff === 1) countEl.textContent = "Salís mañana";
+else countEl.textContent = "Viaje terminado";
+
+var start = location.hash.slice(1);
+go(start && (start === "todo" || dayById(start)) ? start : (todayDay ? todayDay.d.id : "todo"));
+})();
+</script>
+
+</body>
+</html>
