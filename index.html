@@ -749,6 +749,7 @@ header.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:s
 .pin.home span{border-radius:7px; background:var(--fg); color:var(--bg)}
 .leaflet-marker-icon.pin:focus-visible{outline:none}
 .leaflet-marker-icon.pin:focus-visible span{box-shadow:0 0 0 3px var(--focus)}
+.map.dark-tiles .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.92) contrast(.88) saturate(.7)}
 .rt{stroke-linecap:round; stroke-linejoin:round}
 .rt-case{stroke:var(--surface); stroke-linecap:round; opacity:.85}
 .rt.mie{stroke:var(--d1)} .rt.jue{stroke:var(--d2)} .rt.vie{stroke:var(--d3)} .rt.sab{stroke:var(--d4)} .rt.dom{stroke:var(--d5)}
@@ -1054,11 +1055,8 @@ function dayRouteUrl(d){
 /* ---------- Mapa con calles (Leaflet) ---------- */
 var map = null, tiles = null, routes = null, marks = null, simple = null, here = null;
 var tileOk = false, tileErr = 0, simpleOn = false, mapReady = false;
-var TILE_URL = {
-  light: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-};
-var ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>';
+var TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+var ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 var ICON_FIT = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 var ICON_LOC = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/><path d="M8 0.8v2.4M8 12.8v2.4M0.8 8h2.4M12.8 8h2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 var ICON_BIG = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M3.5 5.5 8 2l4.5 3.5M3.5 10.5 8 14l4.5-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -1070,11 +1068,10 @@ function isDark(){
   return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
 function setTiles(){
-  if (!map || simpleOn) return;
-  var url = TILE_URL[isDark() ? "dark" : "light"];
-  if (tiles && tiles._url === url) return;
-  if (tiles) map.removeLayer(tiles);
-  tiles = L.tileLayer(url, {subdomains: "abcd", maxZoom: 19, attribution: ATTR});
+  if (!map) return;
+  document.getElementById("map").classList.toggle("dark-tiles", isDark());
+  if (tiles || simpleOn) return;
+  tiles = L.tileLayer(TILE_URL, {maxZoom: 19, attribution: ATTR});
   tiles.on("tileload", function(){ tileOk = true; });
   tiles.on("tileerror", function(){ tileErr++; if (!tileOk && tileErr >= 3) useSimple(); });
   tiles.addTo(map);
