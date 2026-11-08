@@ -190,13 +190,12 @@ var DAYS = [
   casa("20:30", "", {m:"pie", txt:"A pie por Westbourne Grove · 15 min"}),
   {t:"17:00–19:30", name:"Christmas at Kew", alt:true, xmas:true, kind:"navidad", off:"w", offLabel:"Kew · 40 min", lat:51.4787, lon:-0.2956, q:"Christmas at Kew", res:"Reserva · £25–30", desc:"Alternativa al Churchill Arms y Notting Hill: el recorrido de luces del jardín botánico. Metro District desde Bayswater con cambio en Earl's Court (£3–4 cada trayecto)."}
  ]},
- {id:"jue", short:"Jue 19", long:"Jueves 19 de noviembre", date:"2026-11-19", theme:"Westminster, free tour y Navidad en el West End", c:"--d2", cost:"£6,10", costNote:"2 trayectos", reservas:"Abadía 9:30 · free tour 11:15 · Somerset House 17:15 (opcional)", stops:[
-  casa("8:40", "Salid hacia la estación de Bayswater."),
-  {t:"9:00", name:"Big Ben y Westminster Bridge", short:"Big Ben", kind:"visita", lat:51.5007, lon:-0.1246, q:"Big Ben", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10"}, desc:"Fotos con el London Eye de fondo antes de que llegue la gente."},
-  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Coronaciones, Poets' Corner y tumbas reales. Llevad el carnet de estudiante."},
-  {t:"11:15", name:"Free tour: Westminster y zona real", short:"Free tour", kind:"visita", lat:51.5073, lon:-0.1277, q:"Charles I statue Trafalgar Square", res:"GuruWalk · propina £10–15", leg:{m:"pie", txt:"A pie por Whitehall · 10 min"}, desc:"Sale junto a la estatua de Carlos I, en Trafalgar Square, y recorre Whitehall, Horse Guards y St James's Park. Dura unas 2 h."},
-  {t:"13:15", name:"Buckingham Palace", short:"Buckingham", kind:"visita", lat:51.5014, lon:-0.1419, q:"Buckingham Palace", leg:{m:"tour", txt:"Con el free tour, a pie"}, desc:"Aquí termina el tour."},
-  {t:"13:30", name:"Comida en Piccadilly", short:"Comida", kind:"comida", lat:51.5098, lon:-0.1342, q:"Piccadilly Circus", leg:{m:"pie", txt:"A pie por Green Park · 15 min"}, desc:"Pret, Leon o un pub para un fish and chips (£12–18)."},
+ {id:"jue", short:"Jue 19", long:"Jueves 19 de noviembre", date:"2026-11-19", theme:"Westminster, free tour y Navidad en el West End", c:"--d2", cost:"£6,10", costNote:"2 trayectos", reservas:"Abadía 9:30 · free tour 11:00 · Somerset House 17:15 (opcional)", stops:[
+  casa("8:45", "Salid hacia la estación de Bayswater."),
+  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10"}, desc:"Por dentro: coronaciones, Poets' Corner y tumbas reales. Al salir, fotos del Big Ben. Llevad el carnet de estudiante y salid hacia las 10:40."},
+  {t:"11:00", name:"Free Tour Londres Imprescindible", short:"Free tour", kind:"visita", lat:51.5073, lon:-0.1277, q:"Charles I statue Trafalgar Square", res:"GuruWalk · propina £10–15", book:"https://www.guruwalk.com/es/londres", leg:{m:"pie", txt:"A pie por Whitehall · 15 min"}, desc:"En español, unas 1 h 30 min. Punto de encuentro: estatua de Carlos I, en Trafalgar Square; llegad 10 min antes. Paradas: Trafalgar Square → Horse Guards Parade → 10 Downing Street → Big Ben → Abadía de Westminster → St James's Park → Buckingham Palace."},
+  {t:"12:30", name:"Buckingham Palace", short:"Buckingham", kind:"visita", lat:51.5014, lon:-0.1419, q:"Buckingham Palace", leg:{m:"tour", txt:"Con el free tour, a pie"}, desc:"Aquí termina el tour. Dejad la propina al guía."},
+  {t:"12:45", name:"Comida en Piccadilly", short:"Comida", kind:"comida", lat:51.5098, lon:-0.1342, q:"Piccadilly Circus", leg:{m:"pie", txt:"A pie por Green Park · 15 min"}, desc:"Pret, Leon o un pub para un fish and chips (£12–18)."},
   {t:"14:00", name:"National Gallery", kind:"visita", lat:51.5089, lon:-0.1283, q:"National Gallery London", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Gratis. Lo esencial: los Girasoles de Van Gogh, Turner, Velázquez y Monet."},
   {t:"15:30", name:"Mercado navideño de Trafalgar Square", short:"Trafalgar", xmas:true, kind:"navidad", lat:51.5078, lon:-0.1286, q:"Trafalgar Square", leg:{m:"pie", txt:"A pie · 1 min"}, desc:"Las casetas están en la misma plaza, al salir del museo."},
   {t:"15:45", name:"Covent Garden", xmas:true, kind:"navidad", lat:51.5117, lon:-0.1240, q:"Covent Garden Market", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Árbol gigante y adornos enormes en el mercado cubierto; luce más desde que oscurece, hacia las 16:00. Después, Neal's Yard y Seven Dials."},
@@ -247,7 +246,7 @@ var CHECKS = [
  ["eta", "ETA para entrar en Reino Unido (£20 por persona)", "ya"],
  ["checkin-wizz", "Check-in de Wizz Air en la app", "antes del 18"],
  ["abadia", "Abadía de Westminster, entrada de estudiante", "jue 9:30"],
- ["freetour", "Free tour en español (GuruWalk)", "jue 11:15"],
+ ["freetour", "Free Tour Londres Imprescindible en 1,5h (GuruWalk)", "jue 11:00"],
  ["torre", "Torre de Londres, entrada de estudiante", "vie 9:00"],
  ["horizon", "Horizon 22 (gratis)", "vie 15:45"],
  ["ww", "Hyde Park Winter Wonderland", "vie 18:15"],
@@ -485,6 +484,7 @@ function stopHTML(s, prev){
   h.push('</div><h3>' + esc(s.home ? "Casa" : s.name) + '</h3>');
   if (s.desc) h.push('<p>' + esc(s.desc) + '</p>');
   h.push('<div class="links"><a href="' + mapsUrl(s) + '">Abrir en Google Maps</a>');
+  if (s.book) h.push('<a href="' + s.book + '">Reservar en GuruWalk</a>');
   if (prev && !s.alt){
     var mode = (s.leg && (s.leg.m === "pie" || s.leg.m === "tour")) ? "walking" : "transit";
     if (!(prev.lat === s.lat && prev.lon === s.lon)) h.push('<a href="' + dirUrl(prev, s, mode) + '">Cómo llegar</a>');
@@ -520,7 +520,7 @@ function renderList(){
       '<tr><td>ETA<span class="sub">Si aún no la tenéis</span></td><td class="n">£20</td></tr>' +
       '<tr class="total"><td>Total aproximado</td><td class="n">£280–325<span class="sub">≈ €330–380</span></td></tr>' +
       '</tbody></table></section>');
-    h.push('<p class="foot">Las casillas y las paradas hechas se guardan en el navegador donde abras este archivo.</p>');
+    h.push('<p class="foot">Las casillas y las paradas hechas se guardan en el navegador donde abras esta página.</p>');
   } else {
     var d = dayById(state.view);
     h.push('<header class="dayhead" style="--c:var(' + d.c + ')"><p class="eyebrow">' + esc(d.long) + '</p><h2>' + esc(d.theme) + '</h2>');
