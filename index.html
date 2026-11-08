@@ -673,7 +673,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 /* Layout: mapa esquemático fijo (izquierda en escritorio, arriba en móvil) + itinerario dibujado como una línea de metro */
 :root{
   --bg:#F2F4F6; --surface:#FFFFFF; --fg:#17212B; --muted:#5A6672; --rule:#D7DDE4; --chip:#E8ECF0;
-  --land:#E8ECF0; --river:#B3CDE4; --park:#CFE2C7; --grid:#D9DFE5; --road:#FFFFFF;
+  --land:#E8ECF0; --river:#B3CDE4; --park:#CFE2C7; --grid:#D9DFE5; --road:#FFFFFF; --bus:#1F2933; --on-bus:#FFFFFF;
   --gold:#B07414; --gold-soft:#F6E6C4; --gold-ink:#6E4508; --on-line:#FFFFFF; --focus:#2C67AA;
   --d1:#C4413A; --d2:#2C67AA; --d3:#7646AE; --d4:#1C8466; --d5:#C2691A;
   --f-display:"Young Serif", Georgia, "Times New Roman", serif;
@@ -683,7 +683,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0E141B; --surface:#151D26; --fg:#E5EAF0; --muted:#94A1AF; --rule:#283442; --chip:#1F2833;
-    --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530; --road:#2B3846;
+    --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530; --road:#2B3846; --bus:#E9EEF3; --on-bus:#0F1720;
     --gold:#E2AE4A; --gold-soft:#3A2E17; --gold-ink:#F1CF86; --on-line:#0E141B; --focus:#6FA4E2;
     --d1:#E86A61; --d2:#5E99DC; --d3:#A47FDB; --d4:#3EBB95; --d5:#E69C50;
     color-scheme:dark;
@@ -691,7 +691,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 }
 :root[data-theme="dark"]{
   --bg:#0E141B; --surface:#151D26; --fg:#E5EAF0; --muted:#94A1AF; --rule:#283442; --chip:#1F2833;
-  --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530; --road:#2B3846;
+  --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530; --road:#2B3846; --bus:#E9EEF3; --on-bus:#0F1720;
   --gold:#E2AE4A; --gold-soft:#3A2E17; --gold-ink:#F1CF86; --on-line:#0E141B; --focus:#6FA4E2;
   --d1:#E86A61; --d2:#5E99DC; --d3:#A47FDB; --d4:#3EBB95; --d5:#E69C50;
   color-scheme:dark;
@@ -754,6 +754,8 @@ header.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:s
 .rt-case{stroke:var(--surface); stroke-linecap:round; opacity:.85}
 .rt.mie{stroke:var(--d1)} .rt.jue{stroke:var(--d2)} .rt.vie{stroke:var(--d3)} .rt.sab{stroke:var(--d4)} .rt.dom{stroke:var(--d5)}
 .rt.far{opacity:.55}
+.rt-bus{stroke:var(--bus); stroke-linecap:round; stroke-linejoin:round}
+.rt-bus-dots{stroke:var(--on-bus); stroke-linecap:round}
 .here-acc{stroke:var(--focus); fill:var(--focus); fill-opacity:.12}
 .here-dot{stroke:var(--surface); fill:var(--focus)}
 /* mapa simplificado */
@@ -766,6 +768,13 @@ header.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:s
 .fb-street span{font-size:10.5px; font-weight:600; letter-spacing:.02em; display:none; text-shadow:0 0 3px var(--land), 0 0 3px var(--land)}
 .z-hi .fb-street span{display:block}
 .z-lo .fb-area span{font-size:10.5px}
+.modebar{display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+.seg{display:inline-flex; border:1px solid var(--rule); border-radius:999px; padding:2px; background:var(--surface)}
+.seg button{border:0; background:transparent; color:var(--fg); font:600 13px/1 var(--f-body); padding:7px 14px; border-radius:999px; cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg); color:var(--bg)}
+.seg button[data-mode="bus"][aria-pressed="true"]{background:var(--bus); color:var(--on-bus)}
+.fact.on{border-color:var(--fg)}
+.fact.bus.on{border-color:var(--bus)}
 .legend{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--muted)}
 .legend span{display:inline-flex; align-items:center; gap:6px}
 
@@ -784,11 +793,16 @@ button, a{font-family:inherit}
 .stops{list-style:none; margin:22px 0 0; padding:0; position:relative}
 .stops::before{content:""; position:absolute; left:18px; top:34px; bottom:34px; width:4px; border-radius:2px; background:var(--c)}
 .stop{display:grid; grid-template-columns:40px minmax(0, 1fr); grid-template-areas:". leg" "badge card"; column-gap:12px; scroll-margin-top:calc(42svh + 120px)}
-.leg{grid-area:leg; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; color:var(--muted); padding:9px 0}
+.leg{grid-area:leg; display:grid; gap:6px; font-size:13px; color:var(--muted); padding:9px 0}
+.legopt{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.legopt .lt{flex:1 1 180px; min-width:0}
+.legopt.dim{opacity:.62}
+.mode.bus{background:var(--bus); color:var(--on-bus)}
+.mode.nobus{border:1.5px solid var(--rule); color:var(--muted)}
 .mode{font:600 10.5px/1 var(--f-body); letter-spacing:.07em; text-transform:uppercase; border-radius:4px; padding:4px 6px}
 .mode.metro, .mode.tren{background:var(--c); color:var(--on-line)}
 .mode.pie, .mode.tour{border:1.5px dashed var(--c); color:var(--fg)}
-.leg .cost{margin-left:auto; font-family:var(--f-mono); color:var(--fg); font-weight:500; font-variant-numeric:tabular-nums}
+.legopt .cost{margin-left:auto; font-family:var(--f-mono); color:var(--fg); font-weight:500; font-variant-numeric:tabular-nums}
 .badge{grid-area:badge; align-self:start; justify-self:center; margin-top:10px; width:34px; height:34px; border-radius:50%; background:var(--c); color:var(--on-line); display:grid; place-items:center; font:700 14px/1 var(--f-body); box-shadow:0 0 0 4px var(--bg); position:relative; z-index:1; font-variant-numeric:tabular-nums}
 .badge.home{background:var(--fg); color:var(--bg); border-radius:9px}
 .badge.xmas{box-shadow:0 0 0 3px var(--bg), 0 0 0 5.5px var(--gold), 0 0 0 8px var(--bg)}
@@ -867,6 +881,7 @@ section.block{margin-top:30px}
   <div class="layout">
     <aside class="panel" aria-label="Mapa">
       <nav class="tabs" id="tabs" aria-label="Días del viaje"></nav>
+      <div class="modebar"><span>Ver trayectos en</span><div class="seg" role="group" aria-label="Metro o bus"><button type="button" data-mode="metro" aria-pressed="true">Metro</button><button type="button" data-mode="bus" aria-pressed="false">Bus</button></div><span>Bus: £1,85 y todos los buses que cojáis en 1 h por el mismo precio</span></div>
       <div class="mapbox">
         <div class="map" id="map" aria-label="Mapa de Londres con las paradas"></div>
         <p class="maptoast" id="maptoast" role="status" hidden></p>
@@ -874,8 +889,9 @@ section.block{margin-top:30px}
       <div class="legend">
         <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--fg)" stroke-width="4" stroke-linecap="round"/></svg>metro o tren</span>
         <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--fg)" stroke-width="2.5" stroke-dasharray="5 4"/></svg>a pie</span>
+        <span><svg width="26" height="8"><line x1="2" y1="4" x2="24" y2="4" stroke="var(--bus)" stroke-width="6" stroke-linecap="round"/><line x1="4" y1="4" x2="24" y2="4" stroke="var(--on-bus)" stroke-width="2" stroke-linecap="round" stroke-dasharray="0.1 6"/></svg>bus</span>
         <span><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--muted)"/><circle cx="8" cy="8" r="7" fill="none" stroke="var(--gold)" stroke-width="1.6"/></svg>plan navideño</span>
-        <span id="mapnote">Arrastra para moverte; pellizca o usa + y − para ampliar. Las líneas unen las paradas en recto: para la ruta exacta, «Cómo llegar».</span>
+        <span id="mapnote">Arrastra para moverte; pellizca o usa + y − para ampliar. Las líneas de metro unen las paradas en recto; las de bus siguen más o menos su recorrido.</span>
       </div>
     </aside>
     <main class="list" id="list"></main>
@@ -887,25 +903,53 @@ section.block{margin-top:30px}
 (function(){
 "use strict";
 
+/* ---------- Recorridos de bus (aproximados, por las calles principales) ---------- */
+function rev(a){ return a.slice().reverse(); }
+function j(){ var r = []; for (var i = 0; i < arguments.length; i++) r = r.concat(arguments[i]); return r; }
+var BAYS_E = [[51.5113,-0.1858],[51.5113,-0.1840],[51.5116,-0.1790],[51.5118,-0.1755],[51.5122,-0.1700],[51.5127,-0.1640],[51.5131,-0.1597]];
+var PARKLANE_S = [[51.5124,-0.1585],[51.5100,-0.1564],[51.5073,-0.1540],[51.5048,-0.1526],[51.5030,-0.1523]];
+var HPC_VIC = [[51.5018,-0.1510],[51.4998,-0.1488],[51.4980,-0.1468],[51.4970,-0.1452]];
+var VIC_ABBEY = [[51.4965,-0.1425],[51.4970,-0.1395],[51.4980,-0.1365],[51.4988,-0.1340],[51.4993,-0.1310],[51.4994,-0.1287]];
+var PICC_W = [[51.5099,-0.1349],[51.5088,-0.1380],[51.5076,-0.1410],[51.5065,-0.1440],[51.5050,-0.1475],[51.5036,-0.1512]];
+var PARKLANE_N = [[51.5048,-0.1526],[51.5073,-0.1540],[51.5100,-0.1564],[51.5124,-0.1585],[51.5133,-0.1597]];
+var EDG_QW = [[51.5145,-0.1610],[51.5160,-0.1630],[51.5172,-0.1648],[51.5168,-0.1690],[51.5163,-0.1735],[51.5165,-0.1770],[51.5175,-0.1800],[51.5180,-0.1840],[51.5175,-0.1878]];
+var QW_WALK = [[51.5150,-0.1880]];
+var STRAND_E = [[51.5080,-0.1270],[51.5088,-0.1250],[51.5105,-0.1215],[51.5118,-0.1180],[51.5130,-0.1160],[51.5137,-0.1110],[51.5140,-0.1060],[51.5139,-0.1040],[51.5138,-0.0995],[51.5130,-0.0965],[51.5118,-0.0930],[51.5113,-0.0905],[51.5108,-0.0870]];
+var MON_TOWER = [[51.5100,-0.0820],[51.5098,-0.0790]];
+var HAYMARKET_W = [[51.5080,-0.1281],[51.5085,-0.1320]];
+var BUS = {
+  victoriaHome: j([[51.4970,-0.1452]], rev(HPC_VIC), [[51.5027,-0.1527]], rev(PARKLANE_S), [[51.5133,-0.1597]], rev(BAYS_E)),
+  r27: j(QW_WALK, [[51.5175,-0.1878],[51.5180,-0.1840],[51.5175,-0.1800],[51.5165,-0.1770],[51.5170,-0.1735],[51.5185,-0.1700],[51.5203,-0.1680],[51.5222,-0.1630],[51.5226,-0.1571],[51.5232,-0.1500],[51.5238,-0.1440],[51.5247,-0.1390],[51.5270,-0.1388],[51.5300,-0.1388],[51.5342,-0.1387],[51.5365,-0.1400],[51.5392,-0.1426],[51.5405,-0.1452]]),
+  homeAbbey: j([[51.5113,-0.1866]], BAYS_E.slice(1), PARKLANE_S, [[51.5027,-0.1527]], HPC_VIC, VIC_ABBEY),
+  picHome: j([[51.5099,-0.1349]], PICC_W, PARKLANE_N, EDG_QW, QW_WALK),
+  homeTower: j(QW_WALK, rev(EDG_QW), rev(PARKLANE_N), rev(PICC_W), rev(HAYMARKET_W), STRAND_E, MON_TOWER),
+  stpHorizon: j([[51.5130,-0.0965],[51.5118,-0.0930],[51.5113,-0.0905],[51.5108,-0.0870],[51.5120,-0.0855],[51.5135,-0.0840]]),
+  cityWW: j([[51.5108,-0.0870]], rev(STRAND_E), HAYMARKET_W, PICC_W, [[51.5048,-0.1526],[51.5068,-0.1538]]),
+  wwHome: j([[51.5073,-0.1540],[51.5100,-0.1564],[51.5124,-0.1585],[51.5133,-0.1597]], rev(BAYS_E)),
+  portoNHM: j([[51.5133,-0.2027],[51.5105,-0.1990],[51.5091,-0.1965],[51.5070,-0.1950],[51.5045,-0.1938],[51.5020,-0.1928],[51.5017,-0.1900],[51.5020,-0.1860],[51.5020,-0.1830],[51.5016,-0.1790],[51.5017,-0.1757],[51.4995,-0.1750],[51.4970,-0.1745]]),
+  nhmLiberty: j([[51.4950,-0.1752],[51.4941,-0.1738],[51.4950,-0.1722],[51.4963,-0.1710],[51.4975,-0.1693],[51.4985,-0.1670],[51.4995,-0.1636],[51.5008,-0.1615],[51.5016,-0.1600],[51.5024,-0.1560],[51.5030,-0.1525]], rev(PICC_W), [[51.5108,-0.1368],[51.5120,-0.1393],[51.5133,-0.1405]]),
+  sohoHome: j([[51.5113,-0.1376]], PICC_W, PARKLANE_N, EDG_QW, QW_WALK)
+};
+
 /* ---------- Datos del itinerario ---------- */
 var CASA = {lat:51.5128, lon:-0.1878};
 function casa(t, desc, leg){ return {t:t, name:"Casa · 80 Inverness Terrace", home:true, kind:"casa", lat:CASA.lat, lon:CASA.lon, q:"80 Inverness Terrace, London W2 3LD", desc:desc||"", leg:leg}; }
 
 var DAYS = [
- {id:"mie", short:"Mié 18", long:"Miércoles 18 de noviembre", date:"2026-11-18", theme:"Llegada, compra y Notting Hill", c:"--d1", cost:"£13,70", costNote:"solo el aeropuerto", reservas:"Ninguna", stops:[
+ {id:"mie", short:"Mié 18", long:"Miércoles 18 de noviembre", date:"2026-11-18", theme:"Llegada, compra y Camden", c:"--d1", cost:"£19,60", costNote:"tren de Gatwick £10,70 + metro con tope £8,90", busCost:"£16,25", busNote:"tren de Gatwick + 3 buses", reservas:"Ninguna", stops:[
   {t:"13:00", name:"Aeropuerto de Gatwick", kind:"transporte", off:"s", offLabel:"Gatwick · 45 km", lat:51.1537, lon:-0.1821, q:"Gatwick Airport", desc:"Vuelo W95724 desde Málaga. Pasaporte y ETA por las puertas automáticas. La maleta tarda 30–45 min: comprad la comida mientras (M&S, Boots o Pret, £5–8)."},
   {t:"15:00", name:"London Victoria", kind:"transporte", lat:51.4952, lon:-0.1441, q:"London Victoria station", leg:{m:"tren", txt:"Tren Southern a Victoria · 35 min", cost:"£10,70"}, desc:"No entréis por los tornos del Gatwick Express (£24). Bajad al metro y coged la línea Circle."},
-  casa("15:30", "Dejad la maleta. Está a 3 min de Bayswater y a 5 de Queensway.", {m:"metro", txt:"Metro Circle · Victoria → Bayswater · 20 min", cost:"£3,00"}),
+  casa("15:30", "Dejad la maleta. Está a 3 min de Bayswater y a 5 de Queensway.", {m:"metro", txt:"Metro Circle · Victoria → Bayswater · 20 min", cost:"£3,00", bus:{n:"148", txt:"Victoria (parada Grosvenor Gardens) → Bayswater Road, parada Porchester Terrace · 30 min aprox. Con maleta va bien: un solo bus, sin escaleras de metro, y pasáis por Hyde Park Corner y Park Lane.", cost:"£1,85", path:BUS.victoriaHome}}),
   {t:"15:45", name:"Compra en el súper", short:"Compra", kind:"compra", lat:51.5185, lon:-0.1880, q:"Waitrose Bayswater Porchester Road", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Waitrose de Porchester Road (abre hasta las 22:00) para la compra grande; Tesco Express, en la esquina de Queensway con Inverness Place, para algo rápido. Llevad bolsa. A las 16:30, de vuelta a casa para dejarla."},
-  {t:"17:05", name:"The Churchill Arms", kind:"visita", lat:51.5069, lon:-0.1946, q:"The Churchill Arms Kensington", leg:{m:"pie", txt:"A pie por Bayswater Road y Kensington Church St · 20 min"}, desc:"El pub de la fachada de flores, con la decoración navideña puesta. Tomad algo dentro; su cocina es tailandesa."},
-  {t:"17:45", name:"Portobello Road y Blenheim Crescent", short:"Portobello", kind:"visita", lat:51.5155, lon:-0.2054, q:"The Notting Hill Bookshop", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"The Notting Hill Bookshop (13 Blenheim Crescent), Books for Cooks y la ropa de Y2K Vintage (217 Portobello Rd). Las tiendas cierran hacia las 18:00–18:30."},
-  {t:"19:00", name:"Cena en Notting Hill Gate", short:"Cena", kind:"comida", lat:51.5091, lon:-0.1965, q:"Notting Hill Gate restaurants", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Pizza, pasta o asiático. Más barato: los asiáticos de Queensway, al lado de casa. Capricho: Granger & Co. (175 Westbourne Grove)."},
-  casa("20:30", "", {m:"pie", txt:"A pie por Westbourne Grove · 15 min"}),
-  {t:"17:00–19:30", name:"Christmas at Kew", alt:true, xmas:true, kind:"navidad", off:"w", offLabel:"Kew · 40 min", lat:51.4787, lon:-0.2956, q:"Christmas at Kew", res:"Reserva · £25–30", desc:"Alternativa al Churchill Arms y Notting Hill: el recorrido de luces del jardín botánico. Metro District desde Bayswater con cambio en Earl's Court (£3–4 cada trayecto)."}
+  casa("16:30", "Dejad la compra y salid hacia Camden.", {m:"pie", txt:"A pie · 10 min"}),
+  {t:"17:15", name:"Camden Market", short:"Camden", kind:"visita", lat:51.5413, lon:-0.1466, q:"Camden Market", leg:{m:"metro", txt:"Metro Central · Queensway → Tottenham Court Road + Northern → Camden Town · 30 min · hora punta (zona 2)", cost:"£3,60", bus:{n:"27", txt:"Parada Queensway, al norte de la calle (10 min a pie) → Camden Town · 40 min aprox. Pasa por Paddington, Baker Street y Regent's Park.", cost:"£1,85", path:BUS.r27}}, desc:"Abre todos los días hasta las 19:00 y entre semana hay mucha menos gente. Camden Lock junto al canal, los túneles de las antiguas cuadras de Stables Market, la estatua de Amy Winehouse, tiendas vintage y Cyberdog. Ya es de noche, pero los puestos están iluminados."},
+  {t:"19:00", name:"Cena en Hawley Wharf", short:"Cena", kind:"comida", lat:51.5408, lon:-0.1448, q:"Hawley Wharf Camden", leg:{m:"pie", txt:"A pie · 3 min"}, desc:"Los puestos de comida de Camden, abiertos hasta las 23:00: cocina de todo el mundo y muchas opciones vegetarianas (£10–15)."},
+  casa("20:30", "", {m:"metro", txt:"Metro Northern · Camden Town → Tottenham Court Road + Central → Queensway · 30 min", cost:"£3,10 → tope £8,90", bus:{n:"27", txt:"Camden Town → parada Queensway · 40 min aprox. + 10 min a pie", cost:"£1,85 → tope £5,55", path:rev(BUS.r27)}}),
+  {t:"17:00–19:30", name:"Christmas at Kew", alt:true, xmas:true, kind:"navidad", off:"w", offLabel:"Kew · 40 min", lat:51.4787, lon:-0.2956, q:"Christmas at Kew", res:"Reserva · £25–30", desc:"Alternativa a Camden: el recorrido de luces del jardín botánico. Metro District desde Bayswater con cambio en Earl's Court (£3–4 cada trayecto)."}
  ]},
- {id:"jue", short:"Jue 19", long:"Jueves 19 de noviembre", date:"2026-11-19", theme:"Westminster, free tour y Navidad en el West End", c:"--d2", cost:"£6,10", costNote:"2 trayectos", reservas:"Abadía 9:30 · free tour 11:00 · Somerset House 17:15 (opcional)", stops:[
+ {id:"jue", short:"Jue 19", long:"Jueves 19 de noviembre", date:"2026-11-19", theme:"Westminster, free tour y Navidad en el West End", c:"--d2", cost:"£6,10", costNote:"2 trayectos", busCost:"£3,70", busNote:"2 buses", reservas:"Abadía 9:30 · free tour 11:00 · Somerset House 17:15 (opcional)", stops:[
   casa("8:45", "Salid hacia la estación de Bayswater."),
-  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", book:"https://www.westminster-abbey.org/visit-us/", bookLabel:"Reservar la Abadía", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10"}, desc:"Por dentro: coronaciones, Poets' Corner y tumbas reales. Al salir, fotos del Big Ben. Llevad el carnet de estudiante y salid hacia las 10:40."},
+  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", book:"https://www.westminster-abbey.org/visit-us/", bookLabel:"Reservar la Abadía", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10", bus:{n:"148", txt:"Bayswater Road, parada Porchester Terrace → Parliament Square / Westminster Abbey · 40–45 min en hora punta: salid a las 8:40. Pasa por Marble Arch, Park Lane, Hyde Park Corner y Victoria.", cost:"£1,85", path:BUS.homeAbbey}}, desc:"Por dentro: coronaciones, Poets' Corner y tumbas reales. Al salir, fotos del Big Ben. Llevad el carnet de estudiante y salid hacia las 10:40."},
   {t:"11:00", name:"Free Tour Londres Imprescindible", short:"Free tour", kind:"visita", lat:51.5073, lon:-0.1277, q:"Charles I statue Trafalgar Square", res:"GuruWalk · propina £10–15", book:"https://www.guruwalk.com/es/londres", bookLabel:"Reservar en GuruWalk", leg:{m:"pie", txt:"A pie por Whitehall · 15 min"}, desc:"En español, unas 1 h 30 min. Punto de encuentro: estatua de Carlos I, en Trafalgar Square; llegad 10 min antes. Paradas: Trafalgar Square → Horse Guards Parade → 10 Downing Street → Big Ben → Abadía de Westminster → St James's Park → Buckingham Palace."},
   {t:"12:30", name:"Buckingham Palace", short:"Buckingham", kind:"visita", lat:51.5014, lon:-0.1419, q:"Buckingham Palace", leg:{m:"tour", txt:"Con el free tour, a pie"}, desc:"Aquí termina el tour. Dejad la propina al guía."},
   {t:"12:45", name:"Comida en Piccadilly", short:"Comida", kind:"comida", lat:51.5098, lon:-0.1342, q:"Piccadilly Circus", leg:{m:"pie", txt:"A pie por Green Park · 15 min"}, desc:"Pret, Leon o un pub para un fish and chips (£12–18)."},
@@ -915,38 +959,38 @@ var DAYS = [
   {t:"17:15", name:"Patinaje en Somerset House", short:"Somerset House", xmas:true, opt:true, kind:"navidad", lat:51.5110, lon:-0.1172, q:"Skate at Somerset House", res:"Reserva · £15–28,50", book:"https://www.somersethouse.org.uk/whats-on/skate-somerset-house", bookLabel:"Reservar patinaje", leg:{m:"pie", txt:"A pie por el Strand · 10 min"}, desc:"Sesión de 45 min en el patio del árbol. Si no patináis, el patio se ve gratis."},
   {t:"18:15", name:"Mercado navideño de Leicester Square", short:"Leicester Sq.", xmas:true, kind:"navidad", lat:51.5103, lon:-0.1301, q:"Leicester Square", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Casetas de madera, vino caliente y pista de hielo. Al lado, Piccadilly Circus iluminado."},
   {t:"19:00", name:"Cena en Chinatown", short:"Cena", kind:"comida", lat:51.5115, lon:-0.1312, q:"Chinatown London", leg:{m:"pie", txt:"A pie · 3 min"}, desc:"Dumplings, ramen o bao (£10–15). Si vais a un musical a las 19:30, cenad antes y saltaos Somerset House."},
-  casa("21:00", "", {m:"metro", txt:"Metro Central · Tottenham Court Road → Queensway · 10 min", cost:"£3,00"})
+  casa("21:00", "", {m:"metro", txt:"Metro Central · Tottenham Court Road → Queensway · 10 min", cost:"£3,00", bus:{n:"23", txt:"Piccadilly Circus (5 min a pie desde Chinatown) → parada Queensway · 35 min aprox. + 10 min a pie. Va por Piccadilly, Park Lane y Paddington.", cost:"£1,85", path:BUS.picHome}})
  ]},
- {id:"vie", short:"Vie 20", long:"Viernes 20 de noviembre", date:"2026-11-20", theme:"La City, South Bank y Winter Wonderland", c:"--d3", cost:"£8,90", costNote:"4 trayectos con tope diario", reservas:"Torre 9:00 · Horizon 22 15:45 · Winter Wonderland 18:15", stops:[
+ {id:"vie", short:"Vie 20", long:"Viernes 20 de noviembre", date:"2026-11-20", theme:"La City, South Bank y Winter Wonderland", c:"--d3", cost:"£8,90", costNote:"4 trayectos con tope diario", busCost:"£5,55", busNote:"4 trayectos con el tope de bus", reservas:"Torre 9:00 · Horizon 22 15:45 · Winter Wonderland 18:15", stops:[
   casa("8:20", "Salid hacia la estación de Bayswater."),
-  {t:"9:00", name:"Torre de Londres", short:"Torre", kind:"visita", lat:51.5081, lon:-0.0759, q:"Tower of London", res:"Reserva · ~£29,50 estudiante", book:"https://www.hrp.org.uk/tower-of-london/", bookLabel:"Reservar la Torre", leg:{m:"metro", txt:"Metro Circle · Bayswater → Tower Hill · 35 min · hora punta", cost:"£3,10"}, desc:"Id primero a las Joyas de la Corona; después, la visita gratis con un Beefeater y la Torre Blanca."},
+  {t:"9:00", name:"Torre de Londres", short:"Torre", kind:"visita", lat:51.5081, lon:-0.0759, q:"Tower of London", res:"Reserva · ~£29,50 estudiante", book:"https://www.hrp.org.uk/tower-of-london/", bookLabel:"Reservar la Torre", leg:{m:"metro", txt:"Metro Circle · Bayswater → Tower Hill · 35 min · hora punta", cost:"£3,10", bus:{n:"23 + 15", txt:"Bus 23 de Queensway a Trafalgar Square y bus 15 desde el Strand hasta Tower of London · 1 h 20 aprox. en hora punta. No compensa: habría que salir a las 7:30.", cost:"£1,85 (Hopper)", path:BUS.homeTower}}, desc:"Id primero a las Joyas de la Corona; después, la visita gratis con un Beefeater y la Torre Blanca."},
   {t:"11:45", name:"Tower Bridge", kind:"visita", lat:51.5055, lon:-0.0754, q:"Tower Bridge", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Cruzadlo andando. La pasarela de cristal es de pago y opcional."},
   {t:"12:45", name:"Borough Market", short:"Borough", kind:"comida", lat:51.5055, lon:-0.0910, q:"Borough Market", leg:{m:"pie", txt:"A pie por Queen's Walk · 15 min"}, desc:"Comida de puesto en puesto (£10–15). Id antes de las 13:00 para evitar lo peor."},
   {t:"13:45", name:"Tate Modern", kind:"visita", lat:51.5076, lon:-0.0994, q:"Tate Modern", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Gratis. Subid al mirador de la planta 10 del edificio Blavatnik."},
   {t:"15:00", name:"St Paul's", kind:"visita", lat:51.5138, lon:-0.0984, q:"St Paul's Cathedral", leg:{m:"pie", txt:"A pie por el Millennium Bridge · 10 min"}, desc:"Fotos de la cúpula desde el puente."},
-  {t:"15:45", name:"Horizon 22", kind:"visita", lat:51.5144, lon:-0.0832, q:"Horizon 22 London", res:"Reserva gratis", book:"https://horizon22.co.uk/book", bookLabel:"Reservar Horizon 22 gratis", leg:{m:"metro", txt:"Metro Central · St Paul's → Bank + 5 min a pie", cost:"£3,00"}, desc:"Mirador gratis en la planta 58, más alto que el Shard. Atardecer hacia las 16:00: veis Londres de día y de noche. Las entradas gratis salen cada día y vuelan; si no hay, guardan algo de sitio para quien llega sin reserva, pero no está garantizado. Plan B: The Garden at 120."},
+  {t:"15:45", name:"Horizon 22", kind:"visita", lat:51.5144, lon:-0.0832, q:"Horizon 22 London", res:"Reserva gratis", book:"https://horizon22.co.uk/book", bookLabel:"Reservar Horizon 22 gratis", leg:{m:"metro", txt:"Metro Central · St Paul's → Bank + 5 min a pie", cost:"£3,00", bus:{n:"15", txt:"St Paul's Cathedral → Monument · 8 min + 8 min a pie. Andando directamente son 15 min y gratis.", cost:"£1,85", path:BUS.stpHorizon}}, desc:"Mirador gratis en la planta 58, más alto que el Shard. Atardecer hacia las 16:00: veis Londres de día y de noche. Las entradas gratis salen cada día y vuelan; si no hay, guardan algo de sitio para quien llega sin reserva, pero no está garantizado. Plan B: The Garden at 120."},
   {t:"16:50", name:"Leadenhall Market", short:"Leadenhall", xmas:true, kind:"navidad", lat:51.5128, lon:-0.0838, q:"Leadenhall Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Mercado victoriano cubierto con luces de Navidad."},
-  {t:"18:15", name:"Hyde Park Winter Wonderland", short:"Winter Wonderland", xmas:true, kind:"navidad", lat:51.5060, lon:-0.1560, q:"Hyde Park Winter Wonderland", res:"Reserva · £1–8,25", book:"https://hydeparkwinterwonderland.com/tickets-guide/", bookLabel:"Entradas de Winter Wonderland", leg:{m:"metro", txt:"Metro Central · Bank → Marble Arch · 12 min · hora punta", cost:"£3,10"}, desc:"Abre el 19 de noviembre. Hace falta entrada con franja horaria aunque solo vayáis a pasear; el viernes no entra en la tarifa gratis (solo es de lunes a jueves). Comprad online antes de las 23:59 del día anterior, que sale más barato. Mercadillos, pista de hielo y noria; las atracciones y la comida se pagan aparte (ponche, unas £8)."},
-  casa("21:00", "", {m:"metro", txt:"Metro Central · Marble Arch → Queensway · 2 paradas", cost:"£3,00 → tope £8,90"}),
+  {t:"18:15", name:"Hyde Park Winter Wonderland", short:"Winter Wonderland", xmas:true, kind:"navidad", lat:51.5060, lon:-0.1560, q:"Hyde Park Winter Wonderland", res:"Reserva · £1–8,25", book:"https://hydeparkwinterwonderland.com/tickets-guide/", bookLabel:"Entradas de Winter Wonderland", leg:{m:"metro", txt:"Metro Central · Bank → Marble Arch · 12 min · hora punta", cost:"£3,10", bus:{n:"15 + 23", txt:"Bus 15 de Monument al Strand y bus 23 desde Trafalgar Square hasta Park Lane (parada Dorchester Hotel) · 1 h aprox. en hora punta: salid de Leadenhall a las 17:10. Veis Fleet Street, el Strand y Piccadilly iluminados.", cost:"£1,85 (Hopper)", path:BUS.cityWW}}, desc:"Abre el 19 de noviembre. Hace falta entrada con franja horaria aunque solo vayáis a pasear; el viernes no entra en la tarifa gratis (solo es de lunes a jueves). Comprad online antes de las 23:59 del día anterior, que sale más barato. Mercadillos, pista de hielo y noria; las atracciones y la comida se pagan aparte (ponche, unas £8)."},
+  casa("21:00", "", {m:"metro", txt:"Metro Central · Marble Arch → Queensway · 2 paradas", cost:"£3,00 → tope £8,90", bus:{n:"148 o 94", txt:"Park Lane o Marble Arch → Bayswater Road (Porchester Terrace o Queensway Station) · 10–15 min", cost:"£1,85 → tope £5,55", path:BUS.wwHome}}),
   {t:"15:45", name:"The Garden at 120", alt:true, kind:"visita", lat:51.5118, lon:-0.0817, q:"The Garden at 120 Fenchurch Street", desc:"Plan B si Horizon 22 está lleno: azotea gratis y sin reserva, abierta hasta las 18:30 entre semana."}
  ]},
- {id:"sab", short:"Sáb 21", long:"Sábado 21 de noviembre", date:"2026-11-21", theme:"Portobello, dinosaurios y luces de Navidad", c:"--d4", cost:"£8,90", costNote:"3 trayectos con tope diario", reservas:"Historia Natural 14:00 (gratis, con hora) · musical (opcional)", stops:[
+ {id:"sab", short:"Sáb 21", long:"Sábado 21 de noviembre", date:"2026-11-21", theme:"Portobello, dinosaurios y luces de Navidad", c:"--d4", cost:"£8,90", costNote:"3 trayectos con tope diario", busCost:"£5,55", busNote:"3 buses", reservas:"Historia Natural 14:00 (gratis, con hora) · musical (opcional)", stops:[
   casa("8:30", "Desayuno en casa con la compra del miércoles."),
   {t:"9:00", name:"Kensington Gardens", short:"Kensington G.", kind:"visita", lat:51.5058, lon:-0.1817, q:"Round Pond Kensington Gardens", leg:{m:"pie", txt:"A pie hasta Black Lion Gate · 5 min"}, desc:"Round Pond, Kensington Palace e Italian Gardens con luz de mañana."},
-  {t:"9:50", name:"Café en GAIL's", short:"GAIL's", kind:"comida", lat:51.5133, lon:-0.2027, q:"GAIL's Bakery Portobello Road", leg:{m:"pie", txt:"A pie por Kensington Church Street · 20 min"}, desc:"Café para llevar en el 138 de Portobello Road."},
+  {t:"9:50", name:"Café en GAIL's", short:"GAIL's", kind:"comida", lat:51.5133, lon:-0.2027, q:"GAIL's Bakery Portobello Road", leg:{m:"pie", txt:"A pie por Kensington Church Street, pasando por la fachada navideña de The Churchill Arms (n.º 119) · 20 min"}, desc:"Café para llevar en el 138 de Portobello Road."},
   {t:"10:15", name:"Calles de colores", short:"Colores", kind:"visita", lat:51.5176, lon:-0.2048, q:"Lancaster Road Notting Hill", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Lancaster Road → St Luke's Mews (residencial, hablad bajo) → Westbourne Park Road → Colville Terrace."},
   {t:"11:00", name:"Mercado de Portobello Road", short:"Portobello", kind:"visita", lat:51.5153, lon:-0.2050, q:"Portobello Road Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"El sábado está entero: antigüedades al principio, comida y ropa más abajo. Comed en los puestos hacia las 12:45 (£8–12)."},
-  {t:"14:00", name:"Museo de Historia Natural", short:"Historia Natural", kind:"visita", lat:51.4960, lon:-0.1764, q:"Natural History Museum London", res:"Reserva gratis con hora", book:"https://www.nhm.ac.uk/visit.html", bookLabel:"Reservar entrada gratis", leg:{m:"metro", txt:"Metro Circle o District · Notting Hill Gate → South Kensington · 10 min + 5 min por el túnel", cost:"£3,00"}, desc:"Gratis. El sábado es su día de más gente y la cola sin reserva puede llegar a 30–45 min: reservad la entrada gratuita con hora para las 14:00. Desde la estación, el túnel peatonal os deja en la entrada de Cromwell Road. Lo esencial en 2 h: Hintze Hall con el esqueleto de ballena azul, la galería de dinosaurios con el T. rex que se mueve, y la Red Zone (escalera mecánica hacia la Tierra y la sala del terremoto). Salid hacia las 15:50."},
-  {t:"16:15", name:"Escaparates de Liberty y Hamleys", short:"Liberty", xmas:true, kind:"navidad", lat:51.5139, lon:-0.1400, q:"Liberty London", leg:{m:"metro", txt:"Metro Piccadilly · South Kensington → Piccadilly Circus · 10 min + 10 min a pie por Regent Street", cost:"£3,00"}, desc:"Liberty, la tienda de madera estilo Tudor, tiene planta de Navidad; Hamleys es la juguetería gigante de Regent Street."},
+  {t:"14:00", name:"Museo de Historia Natural", short:"Historia Natural", kind:"visita", lat:51.4960, lon:-0.1764, q:"Natural History Museum London", res:"Reserva gratis con hora", book:"https://www.nhm.ac.uk/visit.html", bookLabel:"Reservar entrada gratis", leg:{m:"metro", txt:"Metro Circle o District · Notting Hill Gate → South Kensington · 10 min + 5 min por el túnel", cost:"£3,00", bus:{n:"52", txt:"Notting Hill Gate → Royal Albert Hall (parada Exhibition Road) · 15 min + 8 min a pie bajando Exhibition Road. Pasa por Kensington Church Street y Kensington Palace.", cost:"£1,85", path:BUS.portoNHM}}, desc:"Gratis. El sábado es su día de más gente y la cola sin reserva puede llegar a 30–45 min: reservad la entrada gratuita con hora para las 14:00. Desde la estación, el túnel peatonal os deja en la entrada de Cromwell Road. Lo esencial en 2 h: Hintze Hall con el esqueleto de ballena azul, la galería de dinosaurios con el T. rex que se mueve, y la Red Zone (escalera mecánica hacia la Tierra y la sala del terremoto). Salid hacia las 15:50."},
+  {t:"16:15", name:"Escaparates de Liberty y Hamleys", short:"Liberty", xmas:true, kind:"navidad", lat:51.5139, lon:-0.1400, q:"Liberty London", leg:{m:"metro", txt:"Metro Piccadilly · South Kensington → Piccadilly Circus · 10 min + 10 min a pie por Regent Street", cost:"£3,00", bus:{n:"14", txt:"South Kensington Station → Piccadilly Circus · 25 min aprox. + 10 min a pie por Regent Street. Pasa por Harrods, Knightsbridge, Hyde Park Corner y el Ritz.", cost:"£1,85", path:BUS.nhmLiberty}}, desc:"Liberty, la tienda de madera estilo Tudor, tiene planta de Navidad; Hamleys es la juguetería gigante de Regent Street."},
   {t:"17:15", name:"Luces de Carnaby y Regent Street", short:"Regent St.", xmas:true, kind:"navidad", lat:51.5113, lon:-0.1376, q:"Regent Street Christmas lights", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Los ángeles iluminados de Regent Street y las luces de Carnaby, este año de temática noventera."},
   {t:"18:15", name:"Escaparates de Fortnum & Mason", short:"Fortnum", xmas:true, opt:true, kind:"navidad", lat:51.5081, lon:-0.1385, q:"Fortnum & Mason Piccadilly", leg:{m:"pie", txt:"A pie bajando Regent Street · 10 min"}, desc:"En Piccadilly. Sus escaparates de Navidad son famosos."},
   {t:"19:00", name:"Cena en Soho", short:"Cena", kind:"comida", lat:51.5130, lon:-0.1393, q:"Kingly Court London", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Kingly Court, junto a Carnaby: muchos restaurantes de precio medio. Musical opcional a las 19:30."},
-  casa("21:30", "", {m:"metro", txt:"Metro Central · Oxford Circus → Queensway · 10 min", cost:"£3,00 → tope £8,90"}),
+  casa("21:30", "", {m:"metro", txt:"Metro Central · Oxford Circus → Queensway · 10 min", cost:"£3,00 → tope £8,90", bus:{n:"23", txt:"Piccadilly Circus (5 min a pie) → parada Queensway · 30 min aprox. + 10 min a pie", cost:"£1,85 → tope £5,55", path:BUS.sohoHome}}),
   {t:"19:00", name:"Southbank Centre Winter Market", short:"Southbank", alt:true, xmas:true, kind:"navidad", lat:51.5050, lon:-0.1170, q:"Southbank Centre Winter Market", desc:"Alternativa para cenar: puestos de comida junto al London Eye, a 20 min andando desde Piccadilly. Para volver, Bakerloo de Embankment a Oxford Circus y allí la Central."}
  ]},
- {id:"dom", short:"Dom 22", long:"Domingo 22 de noviembre", date:"2026-11-22", theme:"East End y vuelta por Stansted", c:"--d5", cost:"£12,90", costNote:"+ consigna £3–5", reservas:"Stansted Express 12:25", stops:[
+ {id:"dom", short:"Dom 22", long:"Domingo 22 de noviembre", date:"2026-11-22", theme:"East End y vuelta por Stansted", c:"--d5", cost:"£12,90", costNote:"+ consigna £3–5", busCost:"—", busNote:"con maleta, mejor el metro", reservas:"Stansted Express 12:25", stops:[
   casa("8:30", "Check-out. Salid con la maleta hacia Queensway."),
-  {t:"9:00", name:"Liverpool Street · consigna", short:"Liverpool St", kind:"transporte", lat:51.5178, lon:-0.0823, q:"London Liverpool Street station", leg:{m:"metro", txt:"Metro Central · Queensway → Liverpool Street · 20 min", cost:"£3,00"}, desc:"Dejad la maleta en la consigna junto al andén 10 (de 7:00 a 23:00) o en Stasher o Bounce, desde £3–5."},
+  {t:"9:00", name:"Liverpool Street · consigna", short:"Liverpool St", kind:"transporte", lat:51.5178, lon:-0.0823, q:"London Liverpool Street station", leg:{m:"metro", txt:"Metro Central · Queensway → Liverpool Street · 20 min", cost:"£3,00", nobus:"Sin bus cómodo con maleta: hay que cambiar dos veces y se tarda más de 1 h."}, desc:"Dejad la maleta en la consigna junto al andén 10 (de 7:00 a 23:00) o en Stasher o Bounce, desde £3–5."},
   {t:"9:15", name:"Columbia Road Flower Market", short:"Columbia Rd", kind:"visita", lat:51.5296, lon:-0.0709, q:"Columbia Road Flower Market", leg:{m:"pie", txt:"A pie · 20 min"}, desc:"Solo los domingos, de 8:00 a 15:00: la calle entera llena de flores. Llevad algo de efectivo."},
   {t:"10:15", name:"Brick Lane · Beigel Bake", short:"Brick Lane", kind:"comida", lat:51.5246, lon:-0.0718, q:"Beigel Bake Brick Lane", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Grafitis, tiendas vintage y el bagel de salt beef de Beigel Bake (159 Brick Lane)."},
   {t:"11:15", name:"Mercado navideño de Old Spitalfields", short:"Spitalfields", xmas:true, kind:"navidad", lat:51.5196, lon:-0.0753, q:"Old Spitalfields Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Mercado cubierto con puestos de diseño y comida. Buen sitio para comer antes del tren."},
@@ -1023,7 +1067,8 @@ var AREAS = [
 ];
 
 /* ---------- Estado ---------- */
-var state = {view:"todo", active:null, vb:null, anim:0};
+var state = {view:"todo", active:null, mode:"metro"};
+try{ if (localStorage.getItem("londres-modo") === "bus") state.mode = "bus"; }catch(e){}
 var done = load("londres-hechos", []);
 var checks = load("londres-reservas", []);
 function load(key, def){ try{ var v = JSON.parse(localStorage.getItem(key)); return Array.isArray(v) ? v : def; }catch(e){ return def; } }
@@ -1210,6 +1255,14 @@ function draw(){
     d.stops.forEach(function(s){
       if (s.alt) return;
       if (prev && !(prev.lat === s.lat && prev.lon === s.lon)){
+        var bus = state.mode === "bus" && s.leg && s.leg.bus;
+        if (bus){
+          var bl = [[prev.lat, prev.lon]].concat(bus.path || []).concat([[s.lat, s.lon]]), bw = full ? 5.5 : 3;
+          L.polyline(bl, {className: "rt-case", weight: bw + 3, opacity: 1, interactive: false}).addTo(routes);
+          L.polyline(bl, {className: "rt-bus", weight: bw, opacity: 1, interactive: false}).addTo(routes);
+          if (full) L.polyline(bl, {className: "rt-bus-dots", weight: 2, opacity: 1, dashArray: "0.1 9", interactive: false}).addTo(routes);
+          prev = s; return;
+        }
         var m = s.leg ? s.leg.m : "pie", solid = (m === "metro" || m === "tren");
         var w = full ? (solid ? 5 : 3.5) : (solid ? 3 : 2);
         var ll = [[prev.lat, prev.lon], [s.lat, s.lon]], far = (s.off || prev.off) ? " far" : "";
@@ -1241,7 +1294,13 @@ var MODE = {metro:"Metro", tren:"Tren", pie:"A pie", tour:"Free tour"};
 function stopHTML(s, prev){
   var isDone = done.indexOf(s.id) >= 0, h = [];
   h.push('<li class="stop' + (isDone ? " done" : "") + (state.active === s.id ? " is-active" : "") + '" data-stop="' + s.id + '">');
-  if (s.leg && !s.alt) h.push('<div class="leg"><span class="mode ' + s.leg.m + '">' + MODE[s.leg.m] + '</span><span>' + esc(s.leg.txt) + '</span>' + (s.leg.cost ? '<span class="cost">' + esc(s.leg.cost) + '</span>' : '') + '</div>');
+  if (s.leg && !s.alt){
+    var lg = s.leg, b = lg.bus, onBus = state.mode === "bus";
+    h.push('<div class="leg"><div class="legopt' + (b && onBus ? " dim" : "") + '"><span class="mode ' + lg.m + '">' + MODE[lg.m] + '</span><span class="lt">' + esc(lg.txt) + '</span>' + (lg.cost ? '<span class="cost">' + esc(lg.cost) + '</span>' : '') + '</div>');
+    if (b) h.push('<div class="legopt' + (onBus ? "" : " dim") + '"><span class="mode bus">Bus ' + esc(b.n) + '</span><span class="lt">' + esc(b.txt) + '</span><span class="cost">' + esc(b.cost) + '</span></div>');
+    if (lg.nobus) h.push('<div class="legopt dim"><span class="mode nobus">Bus</span><span class="lt">' + esc(lg.nobus) + '</span></div>');
+    h.push('</div>');
+  }
   var cls = "badge" + (s.home ? " home" : "") + (s.xmas ? " xmas" : "") + (s.alt ? " alt" : "");
   h.push('<span class="' + cls + '" aria-hidden="true">' + (s.home ? HOUSE : (isDone && !s.alt ? "✓" : s.num)) + '</span>');
   h.push('<article class="card"><div class="meta"><time>' + esc(s.t) + '</time>');
@@ -1266,12 +1325,12 @@ function stopHTML(s, prev){
 function renderList(){
   var el = document.getElementById("list"), h = [];
   if (state.view === "todo"){
-    h.push('<section class="intro"><h2>Cinco días, cinco líneas</h2><p>Cada día es una línea de color en el mapa. Abre un día para ver sus paradas en orden, con el transporte y lo que cuesta cada trayecto por persona.</p></section>');
+    h.push('<section class="intro"><h2>Cinco días, cinco líneas</h2><p>Cada día es una línea de color en el mapa. Abre un día para ver sus paradas en orden, con el transporte y lo que cuesta cada trayecto por persona.</p><p>Cada trayecto tiene dos opciones: metro, más rápido, o bus, más barato y viendo la ciudad (sentaos arriba, delante). El bus cuesta £1,85, todos los buses que cojáis en 1 hora entran en ese precio y el máximo al día es £5,55. Con el botón «Metro / Bus» de encima del mapa cambiáis las rutas que se dibujan.</p></section>');
     h.push('<div class="daycards">');
     DAYS.forEach(function(d){
       var n = d.stops.filter(function(s){ return !s.home && !s.alt; }).length;
       var x = d.stops.filter(function(s){ return s.xmas && !s.alt; }).length;
-      h.push('<button type="button" class="daycard" data-go="' + d.id + '" style="--c:var(' + d.c + ')"><span class="dc-top"><svg width="30" height="10" aria-hidden="true"><line x1="2" y1="5" x2="28" y2="5" stroke="var(' + d.c + ')" stroke-width="4" stroke-linecap="round"/><circle cx="15" cy="5" r="4" fill="var(' + d.c + ')" stroke="var(--surface)" stroke-width="1.5"/></svg>' + d.short + '</span><span class="dc-title">' + esc(d.theme) + '</span><span class="dc-meta">' + n + ' paradas · ' + (x ? x + ' navideñas · ' : '') + 'transporte ' + d.cost + '</span></button>');
+      h.push('<button type="button" class="daycard" data-go="' + d.id + '" style="--c:var(' + d.c + ')"><span class="dc-top"><svg width="30" height="10" aria-hidden="true"><line x1="2" y1="5" x2="28" y2="5" stroke="var(' + d.c + ')" stroke-width="4" stroke-linecap="round"/><circle cx="15" cy="5" r="4" fill="var(' + d.c + ')" stroke="var(--surface)" stroke-width="1.5"/></svg>' + d.short + '</span><span class="dc-title">' + esc(d.theme) + '</span><span class="dc-meta">' + n + ' paradas · ' + (x ? x + ' navideñas · ' : '') + 'metro ' + d.cost + ' · bus ' + d.busCost + '</span></button>');
     });
     h.push('</div>');
     h.push('<section class="block"><h3 class="sec">Reservas y trámites</h3><p class="checknote">Gratis pero con reserva para no hacer cola: Horizon 22 y el Museo de Historia Natural. Sin reservar: National Gallery, Tate Modern, mercados y luces.</p><ul class="checks">');
@@ -1281,18 +1340,18 @@ function renderList(){
     });
     h.push('</ul></section>');
     h.push('<section class="block"><h3 class="sec">Gasto estimado por persona</h3><table class="budget"><tbody>' +
-      '<tr><td>Transporte<span class="sub">Aeropuertos incluidos; con contactless y tope diario</span></td><td class="n">£50,50</td></tr>' +
+      '<tr><td>Transporte en metro<span class="sub">Aeropuertos incluidos; con contactless y tope diario. En bus os sale por unas £44</span></td><td class="n">£56,40</td></tr>' +
       '<tr><td>Entradas con precio de estudiante<span class="sub">Abadía, Torre y Winter Wonderland</span></td><td class="n">£63</td></tr>' +
       '<tr><td>Propina del free tour</td><td class="n">£10–15</td></tr>' +
       '<tr><td>Comida y bebida<span class="sub">£30–40 al día, desayunos en casa</span></td><td class="n">£135–180</td></tr>' +
       '<tr><td>ETA<span class="sub">Si aún no la tenéis</span></td><td class="n">£20</td></tr>' +
-      '<tr class="total"><td>Total aproximado</td><td class="n">£283–328<span class="sub">≈ €330–385</span></td></tr>' +
+      '<tr class="total"><td>Total aproximado</td><td class="n">£289–334<span class="sub">≈ €340–390</span></td></tr>' +
       '</tbody></table></section>');
     h.push('<p class="foot">Las casillas y las paradas hechas se guardan en el navegador donde abras esta página.</p>');
   } else {
     var d = dayById(state.view);
     h.push('<header class="dayhead" style="--c:var(' + d.c + ')"><p class="eyebrow">' + esc(d.long) + '</p><h2>' + esc(d.theme) + '</h2>');
-    h.push('<div class="facts"><span class="fact">Transporte <b>' + d.cost + '</b> por persona · ' + esc(d.costNote) + '</span><span class="fact">Reservas: ' + esc(d.reservas) + '</span></div>');
+    h.push('<div class="facts"><span class="fact' + (state.mode === "metro" ? " on" : "") + '">En metro <b>' + d.cost + '</b> por persona · ' + esc(d.costNote) + '</span><span class="fact bus' + (state.mode === "bus" ? " on" : "") + '">En bus <b>' + d.busCost + '</b> · ' + esc(d.busNote) + '</span><span class="fact">Reservas: ' + esc(d.reservas) + '</span></div>');
     h.push('<a class="btn" href="' + dayRouteUrl(d) + '">Abrir la ruta del día en Google Maps ↗</a></header>');
     h.push('<ol class="stops" style="--c:var(' + d.c + ')">');
     var prev = null;
@@ -1338,6 +1397,12 @@ function setActive(id, scroll){
   focusStop(findStop(id));
   if (scroll) scrollToStop(id);
 }
+function setMode(m){
+  state.mode = m === "bus" ? "bus" : "metro";
+  try{ localStorage.setItem("londres-modo", state.mode); }catch(e){}
+  document.querySelectorAll(".seg [data-mode]").forEach(function(b){ b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === state.mode)); });
+  renderList(); draw();
+}
 function ensureMapVisible(){
   if (window.innerWidth >= 920) return;
   var m = document.getElementById("map"), r = m.getBoundingClientRect();
@@ -1348,6 +1413,8 @@ function scrollToStop(id){ var li = document.querySelector('[data-stop="' + id +
 document.addEventListener("click", function(e){
   var t = e.target;
   var goEl = t.closest("[data-go]"); if (goEl){ go(goEl.getAttribute("data-go")); return; }
+  var md = t.closest("[data-mode]");
+  if (md){ setMode(md.getAttribute("data-mode")); return; }
   var dn = t.closest("[data-done]");
   if (dn){
     var id = dn.getAttribute("data-done"), i = done.indexOf(id);
@@ -1377,6 +1444,7 @@ else if (diff > 1) countEl.textContent = "Faltan " + diff + " días";
 else if (diff === 1) countEl.textContent = "Salís mañana";
 else countEl.textContent = "Viaje terminado";
 
+document.querySelectorAll(".seg [data-mode]").forEach(function(b){ b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === state.mode)); });
 var start = location.hash.slice(1);
 go(start && (start === "todo" || dayById(start)) ? start : (todayDay ? todayDay.d.id : "todo"));
 })();
