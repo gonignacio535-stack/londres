@@ -5,14 +5,675 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Mapa del viaje a Londres</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Young+Serif&display=swap">
 <style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+</style>
+<style>
 /* Layout: mapa esquemático fijo (izquierda en escritorio, arriba en móvil) + itinerario dibujado como una línea de metro */
 :root{
   --bg:#F2F4F6; --surface:#FFFFFF; --fg:#17212B; --muted:#5A6672; --rule:#D7DDE4; --chip:#E8ECF0;
-  --land:#E8ECF0; --river:#B3CDE4; --park:#CFE2C7; --grid:#D9DFE5;
+  --land:#E8ECF0; --river:#B3CDE4; --park:#CFE2C7; --grid:#D9DFE5; --road:#FFFFFF;
   --gold:#B07414; --gold-soft:#F6E6C4; --gold-ink:#6E4508; --on-line:#FFFFFF; --focus:#2C67AA;
   --d1:#C4413A; --d2:#2C67AA; --d3:#7646AE; --d4:#1C8466; --d5:#C2691A;
   --f-display:"Young Serif", Georgia, "Times New Roman", serif;
@@ -22,7 +683,7 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0E141B; --surface:#151D26; --fg:#E5EAF0; --muted:#94A1AF; --rule:#283442; --chip:#1F2833;
-    --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530;
+    --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530; --road:#2B3846;
     --gold:#E2AE4A; --gold-soft:#3A2E17; --gold-ink:#F1CF86; --on-line:#0E141B; --focus:#6FA4E2;
     --d1:#E86A61; --d2:#5E99DC; --d3:#A47FDB; --d4:#3EBB95; --d5:#E69C50;
     color-scheme:dark;
@@ -30,7 +691,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#0E141B; --surface:#151D26; --fg:#E5EAF0; --muted:#94A1AF; --rule:#283442; --chip:#1F2833;
-  --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530;
+  --land:#121A23; --river:#1C3954; --park:#183023; --grid:#1B2530; --road:#2B3846;
   --gold:#E2AE4A; --gold-soft:#3A2E17; --gold-ink:#F1CF86; --on-line:#0E141B; --focus:#6FA4E2;
   --d1:#E86A61; --d2:#5E99DC; --d3:#A47FDB; --d4:#3EBB95; --d5:#E69C50;
   color-scheme:dark;
@@ -57,10 +718,53 @@ header.top{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:s
 .tab .dot{width:10px; height:10px; border-radius:50%; background:var(--c)}
 .tab[aria-current="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
 .tab:hover{border-color:var(--fg)}
-.map{position:relative; height:38vh; height:38svh; min-height:230px; border:1px solid var(--rule); border-radius:12px; overflow:hidden; background:var(--land)}
-.map svg{display:block; width:100%; height:100%}
-.mk{cursor:pointer; outline:none}
-.mk:focus-visible circle, .mk:focus-visible rect{stroke:var(--focus); stroke-width:3}
+.mapbox{position:relative; display:flex; flex-direction:column; min-height:0}
+.map{position:relative; z-index:0; height:42vh; height:42svh; min-height:240px; border:1px solid var(--rule); border-radius:12px; overflow:hidden; background:var(--land); transition:height .25s ease}
+.map.big{height:72vh; height:72svh}
+.nomap{margin:0; padding:20px; color:var(--muted)}
+.maptoast{position:absolute; z-index:1; left:10px; right:60px; bottom:28px; margin:0; background:var(--fg); color:var(--bg); font-size:13px; border-radius:8px; padding:8px 12px}
+
+/* Leaflet con los colores de la página */
+.map.leaflet-container{background:var(--land); font-family:var(--f-body); font-size:13px}
+.leaflet-container a{color:var(--fg)}
+.leaflet-bar{border:1px solid var(--rule) !important; box-shadow:0 1px 4px rgba(10,20,30,.18) !important}
+.leaflet-bar a, .leaflet-bar a:hover{background:var(--surface); color:var(--fg); border-bottom-color:var(--rule); width:34px; height:34px; line-height:34px; display:grid; place-items:center}
+.leaflet-touch .leaflet-bar a{width:36px; height:36px; line-height:36px}
+.leaflet-bar a:hover{background:var(--chip)}
+.leaflet-bar a.leaflet-disabled{background:var(--surface); color:var(--muted)}
+.maptools a[aria-pressed="true"]{background:var(--fg); color:var(--bg)}
+.leaflet-control-attribution{background:var(--surface) !important; color:var(--muted); font-size:10.5px; opacity:.9}
+.leaflet-control-attribution a{color:var(--muted)}
+.leaflet-tooltip.tip{background:var(--surface); color:var(--fg); border:1px solid var(--rule); border-radius:6px; font:700 13px/1.2 var(--f-body); padding:5px 8px; box-shadow:0 1px 5px rgba(10,20,30,.25)}
+.leaflet-tooltip-right.tip::before{border-right-color:var(--rule)}
+.leaflet-tooltip-left.tip::before{border-left-color:var(--rule)}
+.leaflet-tooltip-top.tip::before{border-top-color:var(--rule)}
+.leaflet-marker-icon.pin{background:none; border:0}
+.pin span{display:grid; place-items:center; width:100%; height:100%; box-sizing:border-box; border-radius:50%; background:var(--c); color:var(--on-line); font:700 12.5px/1 var(--f-body); font-variant-numeric:tabular-nums; border:2px solid var(--surface); box-shadow:0 1px 4px rgba(10,20,30,.4)}
+.pin.active span{font-size:14.5px; border-width:2.5px}
+.pin.xmas span{outline:2.5px solid var(--gold); outline-offset:1px}
+.pin.alt span{background:var(--surface); color:var(--fg); border:2px dashed var(--c)}
+.pin.done span{background:var(--muted)}
+.pin.dot span{border-width:1.5px}
+.pin.home span{border-radius:7px; background:var(--fg); color:var(--bg)}
+.leaflet-marker-icon.pin:focus-visible{outline:none}
+.leaflet-marker-icon.pin:focus-visible span{box-shadow:0 0 0 3px var(--focus)}
+.rt{stroke-linecap:round; stroke-linejoin:round}
+.rt-case{stroke:var(--surface); stroke-linecap:round; opacity:.85}
+.rt.mie{stroke:var(--d1)} .rt.jue{stroke:var(--d2)} .rt.vie{stroke:var(--d3)} .rt.sab{stroke:var(--d4)} .rt.dom{stroke:var(--d5)}
+.rt.far{opacity:.55}
+.here-acc{stroke:var(--focus); fill:var(--focus); fill-opacity:.12}
+.here-dot{stroke:var(--surface); fill:var(--focus)}
+/* mapa simplificado */
+.fb-park{fill:var(--park)}
+.fb-river{stroke:var(--river); stroke-linecap:round; stroke-linejoin:round; fill:none}
+.fb-road-case{stroke:var(--rule); stroke-linecap:round; stroke-linejoin:round; fill:none}
+.fb-road{stroke:var(--road); stroke-linecap:round; stroke-linejoin:round; fill:none}
+.fb-label span{position:absolute; transform:translate(-50%, -50%); white-space:nowrap; pointer-events:none; color:var(--muted)}
+.fb-area span{font-size:12px; font-style:italic; opacity:.85}
+.fb-street span{font-size:10.5px; font-weight:600; letter-spacing:.02em; display:none; text-shadow:0 0 3px var(--land), 0 0 3px var(--land)}
+.z-hi .fb-street span{display:block}
+.z-lo .fb-area span{font-size:10.5px}
 .legend{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--muted)}
 .legend span{display:inline-flex; align-items:center; gap:6px}
 
@@ -78,7 +782,7 @@ button, a{font-family:inherit}
 
 .stops{list-style:none; margin:22px 0 0; padding:0; position:relative}
 .stops::before{content:""; position:absolute; left:18px; top:34px; bottom:34px; width:4px; border-radius:2px; background:var(--c)}
-.stop{display:grid; grid-template-columns:40px minmax(0, 1fr); grid-template-areas:". leg" "badge card"; column-gap:12px; scroll-margin-top:calc(38svh + 120px)}
+.stop{display:grid; grid-template-columns:40px minmax(0, 1fr); grid-template-areas:". leg" "badge card"; column-gap:12px; scroll-margin-top:calc(42svh + 120px)}
 .leg{grid-area:leg; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; color:var(--muted); padding:9px 0}
 .mode{font:600 10.5px/1 var(--f-body); letter-spacing:.07em; text-transform:uppercase; border-radius:4px; padding:4px 6px}
 .mode.metro, .mode.tren{background:var(--c); color:var(--on-line)}
@@ -104,6 +808,9 @@ button, a{font-family:inherit}
 .links{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
 .links a, .done-btn{font-size:12.5px; font-weight:600; color:var(--fg); text-decoration:none; border:1px solid var(--rule); border-radius:8px; padding:6px 10px; background:var(--bg); cursor:pointer; line-height:1.2}
 .links a:hover, .done-btn:hover{border-color:var(--fg)}
+.links a.book{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.links a.book:hover{opacity:.88}
+.checknote{margin:0 0 10px; color:var(--muted); font-size:13.5px; max-width:62ch}
 .done-btn[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
 .alts{margin-top:28px}
 .alts h3.sec, .sec{font-family:var(--f-mono); font-size:12px; font-weight:500; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin:0 0 10px}
@@ -136,15 +843,16 @@ section.block{margin-top:30px}
 @media (min-width:920px){
   .layout{grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); align-items:start; gap:28px}
   .panel{top:calc(env(safe-area-inset-top, 0px) + 12px); height:calc(100svh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); padding-block:0}
-  .map{flex:1; height:auto; min-height:360px}
+  .mapbox{flex:1}
+  .map, .map.big{flex:1; height:auto; min-height:360px}
+  .tool-big{display:none !important}
   .stop{scroll-margin-top:16px}
 }
 @media (prefers-reduced-motion: reduce){ *{transition:none !important; scroll-behavior:auto !important} }
 </style>
+
 </head>
 <body>
-
-
 <div class="wrap">
   <header class="top">
     <div>
@@ -158,18 +866,22 @@ section.block{margin-top:30px}
   <div class="layout">
     <aside class="panel" aria-label="Mapa">
       <nav class="tabs" id="tabs" aria-label="Días del viaje"></nav>
-      <div class="map" id="map"></div>
-      <div class="legend" aria-hidden="true">
+      <div class="mapbox">
+        <div class="map" id="map" aria-label="Mapa de Londres con las paradas"></div>
+        <p class="maptoast" id="maptoast" role="status" hidden></p>
+      </div>
+      <div class="legend">
         <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--fg)" stroke-width="4" stroke-linecap="round"/></svg>metro o tren</span>
         <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--fg)" stroke-width="2.5" stroke-dasharray="5 4"/></svg>a pie</span>
         <span><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--muted)"/><circle cx="8" cy="8" r="7" fill="none" stroke="var(--gold)" stroke-width="1.6"/></svg>plan navideño</span>
-        <span>Mapa a escala, sin calles</span>
+        <span id="mapnote">Arrastra para moverte; pellizca o usa + y − para ampliar. Las líneas unen las paradas en recto: para la ruta exacta, «Cómo llegar».</span>
       </div>
     </aside>
     <main class="list" id="list"></main>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 (function(){
 "use strict";
@@ -192,43 +904,43 @@ var DAYS = [
  ]},
  {id:"jue", short:"Jue 19", long:"Jueves 19 de noviembre", date:"2026-11-19", theme:"Westminster, free tour y Navidad en el West End", c:"--d2", cost:"£6,10", costNote:"2 trayectos", reservas:"Abadía 9:30 · free tour 11:00 · Somerset House 17:15 (opcional)", stops:[
   casa("8:45", "Salid hacia la estación de Bayswater."),
-  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10"}, desc:"Por dentro: coronaciones, Poets' Corner y tumbas reales. Al salir, fotos del Big Ben. Llevad el carnet de estudiante y salid hacia las 10:40."},
-  {t:"11:00", name:"Free Tour Londres Imprescindible", short:"Free tour", kind:"visita", lat:51.5073, lon:-0.1277, q:"Charles I statue Trafalgar Square", res:"GuruWalk · propina £10–15", book:"https://www.guruwalk.com/es/londres", leg:{m:"pie", txt:"A pie por Whitehall · 15 min"}, desc:"En español, unas 1 h 30 min. Punto de encuentro: estatua de Carlos I, en Trafalgar Square; llegad 10 min antes. Paradas: Trafalgar Square → Horse Guards Parade → 10 Downing Street → Big Ben → Abadía de Westminster → St James's Park → Buckingham Palace."},
+  {t:"9:30", name:"Abadía de Westminster", short:"Abadía", kind:"visita", lat:51.4993, lon:-0.1273, q:"Westminster Abbey", res:"Reserva · £28 estudiante", book:"https://www.westminster-abbey.org/visit-us/", bookLabel:"Reservar la Abadía", leg:{m:"metro", txt:"Metro Circle · Bayswater → Westminster · 20 min · hora punta", cost:"£3,10"}, desc:"Por dentro: coronaciones, Poets' Corner y tumbas reales. Al salir, fotos del Big Ben. Llevad el carnet de estudiante y salid hacia las 10:40."},
+  {t:"11:00", name:"Free Tour Londres Imprescindible", short:"Free tour", kind:"visita", lat:51.5073, lon:-0.1277, q:"Charles I statue Trafalgar Square", res:"GuruWalk · propina £10–15", book:"https://www.guruwalk.com/es/londres", bookLabel:"Reservar en GuruWalk", leg:{m:"pie", txt:"A pie por Whitehall · 15 min"}, desc:"En español, unas 1 h 30 min. Punto de encuentro: estatua de Carlos I, en Trafalgar Square; llegad 10 min antes. Paradas: Trafalgar Square → Horse Guards Parade → 10 Downing Street → Big Ben → Abadía de Westminster → St James's Park → Buckingham Palace."},
   {t:"12:30", name:"Buckingham Palace", short:"Buckingham", kind:"visita", lat:51.5014, lon:-0.1419, q:"Buckingham Palace", leg:{m:"tour", txt:"Con el free tour, a pie"}, desc:"Aquí termina el tour. Dejad la propina al guía."},
   {t:"12:45", name:"Comida en Piccadilly", short:"Comida", kind:"comida", lat:51.5098, lon:-0.1342, q:"Piccadilly Circus", leg:{m:"pie", txt:"A pie por Green Park · 15 min"}, desc:"Pret, Leon o un pub para un fish and chips (£12–18)."},
   {t:"14:00", name:"National Gallery", kind:"visita", lat:51.5089, lon:-0.1283, q:"National Gallery London", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Gratis. Lo esencial: los Girasoles de Van Gogh, Turner, Velázquez y Monet."},
   {t:"15:30", name:"Mercado navideño de Trafalgar Square", short:"Trafalgar", xmas:true, kind:"navidad", lat:51.5078, lon:-0.1286, q:"Trafalgar Square", leg:{m:"pie", txt:"A pie · 1 min"}, desc:"Las casetas están en la misma plaza, al salir del museo."},
   {t:"15:45", name:"Covent Garden", xmas:true, kind:"navidad", lat:51.5117, lon:-0.1240, q:"Covent Garden Market", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Árbol gigante y adornos enormes en el mercado cubierto; luce más desde que oscurece, hacia las 16:00. Después, Neal's Yard y Seven Dials."},
-  {t:"17:15", name:"Patinaje en Somerset House", short:"Somerset House", xmas:true, opt:true, kind:"navidad", lat:51.5110, lon:-0.1172, q:"Skate at Somerset House", res:"Reserva · £15–28,50", leg:{m:"pie", txt:"A pie por el Strand · 10 min"}, desc:"Sesión de 45 min en el patio del árbol. Si no patináis, el patio se ve gratis."},
+  {t:"17:15", name:"Patinaje en Somerset House", short:"Somerset House", xmas:true, opt:true, kind:"navidad", lat:51.5110, lon:-0.1172, q:"Skate at Somerset House", res:"Reserva · £15–28,50", book:"https://www.somersethouse.org.uk/whats-on/skate-somerset-house", bookLabel:"Reservar patinaje", leg:{m:"pie", txt:"A pie por el Strand · 10 min"}, desc:"Sesión de 45 min en el patio del árbol. Si no patináis, el patio se ve gratis."},
   {t:"18:15", name:"Mercado navideño de Leicester Square", short:"Leicester Sq.", xmas:true, kind:"navidad", lat:51.5103, lon:-0.1301, q:"Leicester Square", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Casetas de madera, vino caliente y pista de hielo. Al lado, Piccadilly Circus iluminado."},
   {t:"19:00", name:"Cena en Chinatown", short:"Cena", kind:"comida", lat:51.5115, lon:-0.1312, q:"Chinatown London", leg:{m:"pie", txt:"A pie · 3 min"}, desc:"Dumplings, ramen o bao (£10–15). Si vais a un musical a las 19:30, cenad antes y saltaos Somerset House."},
   casa("21:00", "", {m:"metro", txt:"Metro Central · Tottenham Court Road → Queensway · 10 min", cost:"£3,00"})
  ]},
  {id:"vie", short:"Vie 20", long:"Viernes 20 de noviembre", date:"2026-11-20", theme:"La City, South Bank y Winter Wonderland", c:"--d3", cost:"£8,90", costNote:"4 trayectos con tope diario", reservas:"Torre 9:00 · Horizon 22 15:45 · Winter Wonderland 18:15", stops:[
   casa("8:20", "Salid hacia la estación de Bayswater."),
-  {t:"9:00", name:"Torre de Londres", short:"Torre", kind:"visita", lat:51.5081, lon:-0.0759, q:"Tower of London", res:"Reserva · ~£29,50 estudiante", leg:{m:"metro", txt:"Metro Circle · Bayswater → Tower Hill · 35 min · hora punta", cost:"£3,10"}, desc:"Id primero a las Joyas de la Corona; después, la visita gratis con un Beefeater y la Torre Blanca."},
+  {t:"9:00", name:"Torre de Londres", short:"Torre", kind:"visita", lat:51.5081, lon:-0.0759, q:"Tower of London", res:"Reserva · ~£29,50 estudiante", book:"https://www.hrp.org.uk/tower-of-london/", bookLabel:"Reservar la Torre", leg:{m:"metro", txt:"Metro Circle · Bayswater → Tower Hill · 35 min · hora punta", cost:"£3,10"}, desc:"Id primero a las Joyas de la Corona; después, la visita gratis con un Beefeater y la Torre Blanca."},
   {t:"11:45", name:"Tower Bridge", kind:"visita", lat:51.5055, lon:-0.0754, q:"Tower Bridge", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Cruzadlo andando. La pasarela de cristal es de pago y opcional."},
   {t:"12:45", name:"Borough Market", short:"Borough", kind:"comida", lat:51.5055, lon:-0.0910, q:"Borough Market", leg:{m:"pie", txt:"A pie por Queen's Walk · 15 min"}, desc:"Comida de puesto en puesto (£10–15). Id antes de las 13:00 para evitar lo peor."},
   {t:"13:45", name:"Tate Modern", kind:"visita", lat:51.5076, lon:-0.0994, q:"Tate Modern", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Gratis. Subid al mirador de la planta 10 del edificio Blavatnik."},
   {t:"15:00", name:"St Paul's", kind:"visita", lat:51.5138, lon:-0.0984, q:"St Paul's Cathedral", leg:{m:"pie", txt:"A pie por el Millennium Bridge · 10 min"}, desc:"Fotos de la cúpula desde el puente."},
-  {t:"15:45", name:"Horizon 22", kind:"visita", lat:51.5144, lon:-0.0832, q:"Horizon 22 London", res:"Reserva gratis", leg:{m:"metro", txt:"Metro Central · St Paul's → Bank + 5 min a pie", cost:"£3,00"}, desc:"Mirador gratis en la planta 58, más alto que el Shard. Atardecer hacia las 16:00: veis Londres de día y de noche."},
+  {t:"15:45", name:"Horizon 22", kind:"visita", lat:51.5144, lon:-0.0832, q:"Horizon 22 London", res:"Reserva gratis", book:"https://horizon22.co.uk/book", bookLabel:"Reservar Horizon 22 gratis", leg:{m:"metro", txt:"Metro Central · St Paul's → Bank + 5 min a pie", cost:"£3,00"}, desc:"Mirador gratis en la planta 58, más alto que el Shard. Atardecer hacia las 16:00: veis Londres de día y de noche. Las entradas gratis salen cada día y vuelan; si no hay, guardan algo de sitio para quien llega sin reserva, pero no está garantizado. Plan B: The Garden at 120."},
   {t:"16:50", name:"Leadenhall Market", short:"Leadenhall", xmas:true, kind:"navidad", lat:51.5128, lon:-0.0838, q:"Leadenhall Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Mercado victoriano cubierto con luces de Navidad."},
-  {t:"18:15", name:"Hyde Park Winter Wonderland", short:"Winter Wonderland", xmas:true, kind:"navidad", lat:51.5060, lon:-0.1560, q:"Hyde Park Winter Wonderland", res:"Reserva · £1–8,25", leg:{m:"metro", txt:"Metro Central · Bank → Marble Arch · 12 min · hora punta", cost:"£3,10"}, desc:"Mercadillos, pista de hielo y noria. Las atracciones y la comida se pagan aparte (ponche, unas £8)."},
+  {t:"18:15", name:"Hyde Park Winter Wonderland", short:"Winter Wonderland", xmas:true, kind:"navidad", lat:51.5060, lon:-0.1560, q:"Hyde Park Winter Wonderland", res:"Reserva · £1–8,25", book:"https://hydeparkwinterwonderland.com/tickets-guide/", bookLabel:"Entradas de Winter Wonderland", leg:{m:"metro", txt:"Metro Central · Bank → Marble Arch · 12 min · hora punta", cost:"£3,10"}, desc:"Abre el 19 de noviembre. Hace falta entrada con franja horaria aunque solo vayáis a pasear; el viernes no entra en la tarifa gratis (solo es de lunes a jueves). Comprad online antes de las 23:59 del día anterior, que sale más barato. Mercadillos, pista de hielo y noria; las atracciones y la comida se pagan aparte (ponche, unas £8)."},
   casa("21:00", "", {m:"metro", txt:"Metro Central · Marble Arch → Queensway · 2 paradas", cost:"£3,00 → tope £8,90"}),
   {t:"15:45", name:"The Garden at 120", alt:true, kind:"visita", lat:51.5118, lon:-0.0817, q:"The Garden at 120 Fenchurch Street", desc:"Plan B si Horizon 22 está lleno: azotea gratis y sin reserva, abierta hasta las 18:30 entre semana."}
  ]},
- {id:"sab", short:"Sáb 21", long:"Sábado 21 de noviembre", date:"2026-11-21", theme:"Kensington, Portobello y luces de Navidad", c:"--d4", cost:"£6,00", costNote:"2 trayectos", reservas:"Musical (opcional)", stops:[
+ {id:"sab", short:"Sáb 21", long:"Sábado 21 de noviembre", date:"2026-11-21", theme:"Portobello, dinosaurios y luces de Navidad", c:"--d4", cost:"£8,90", costNote:"3 trayectos con tope diario", reservas:"Historia Natural 14:00 (gratis, con hora) · musical (opcional)", stops:[
   casa("8:30", "Desayuno en casa con la compra del miércoles."),
   {t:"9:00", name:"Kensington Gardens", short:"Kensington G.", kind:"visita", lat:51.5058, lon:-0.1817, q:"Round Pond Kensington Gardens", leg:{m:"pie", txt:"A pie hasta Black Lion Gate · 5 min"}, desc:"Round Pond, Kensington Palace e Italian Gardens con luz de mañana."},
   {t:"9:50", name:"Café en GAIL's", short:"GAIL's", kind:"comida", lat:51.5133, lon:-0.2027, q:"GAIL's Bakery Portobello Road", leg:{m:"pie", txt:"A pie por Kensington Church Street · 20 min"}, desc:"Café para llevar en el 138 de Portobello Road."},
   {t:"10:15", name:"Calles de colores", short:"Colores", kind:"visita", lat:51.5176, lon:-0.2048, q:"Lancaster Road Notting Hill", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Lancaster Road → St Luke's Mews (residencial, hablad bajo) → Westbourne Park Road → Colville Terrace."},
   {t:"11:00", name:"Mercado de Portobello Road", short:"Portobello", kind:"visita", lat:51.5153, lon:-0.2050, q:"Portobello Road Market", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"El sábado está entero: antigüedades al principio, comida y ropa más abajo. Comed en los puestos hacia las 12:45 (£8–12)."},
-  {t:"14:00", name:"British Museum", kind:"visita", lat:51.5194, lon:-0.1270, q:"British Museum", leg:{m:"metro", txt:"Metro Central · Notting Hill Gate → Tottenham Court Road + 10 min a pie", cost:"£3,00"}, desc:"Gratis; cierra a las 17:00. Piedra de Rosetta, momias egipcias y mármoles del Partenón."},
-  {t:"16:15", name:"Escaparates de Liberty y Hamleys", short:"Liberty", xmas:true, kind:"navidad", lat:51.5139, lon:-0.1400, q:"Liberty London", leg:{m:"pie", txt:"A pie · 15 min"}, desc:"Liberty, la tienda de madera estilo Tudor, tiene planta de Navidad; Hamleys es la juguetería gigante de Regent Street."},
+  {t:"14:00", name:"Museo de Historia Natural", short:"Historia Natural", kind:"visita", lat:51.4960, lon:-0.1764, q:"Natural History Museum London", res:"Reserva gratis con hora", book:"https://www.nhm.ac.uk/visit.html", bookLabel:"Reservar entrada gratis", leg:{m:"metro", txt:"Metro Circle o District · Notting Hill Gate → South Kensington · 10 min + 5 min por el túnel", cost:"£3,00"}, desc:"Gratis. El sábado es su día de más gente y la cola sin reserva puede llegar a 30–45 min: reservad la entrada gratuita con hora para las 14:00. Desde la estación, el túnel peatonal os deja en la entrada de Cromwell Road. Lo esencial en 2 h: Hintze Hall con el esqueleto de ballena azul, la galería de dinosaurios con el T. rex que se mueve, y la Red Zone (escalera mecánica hacia la Tierra y la sala del terremoto). Salid hacia las 15:50."},
+  {t:"16:15", name:"Escaparates de Liberty y Hamleys", short:"Liberty", xmas:true, kind:"navidad", lat:51.5139, lon:-0.1400, q:"Liberty London", leg:{m:"metro", txt:"Metro Piccadilly · South Kensington → Piccadilly Circus · 10 min + 10 min a pie por Regent Street", cost:"£3,00"}, desc:"Liberty, la tienda de madera estilo Tudor, tiene planta de Navidad; Hamleys es la juguetería gigante de Regent Street."},
   {t:"17:15", name:"Luces de Carnaby y Regent Street", short:"Regent St.", xmas:true, kind:"navidad", lat:51.5113, lon:-0.1376, q:"Regent Street Christmas lights", leg:{m:"pie", txt:"A pie · 5 min"}, desc:"Los ángeles iluminados de Regent Street y las luces de Carnaby, este año de temática noventera."},
   {t:"18:15", name:"Escaparates de Fortnum & Mason", short:"Fortnum", xmas:true, opt:true, kind:"navidad", lat:51.5081, lon:-0.1385, q:"Fortnum & Mason Piccadilly", leg:{m:"pie", txt:"A pie bajando Regent Street · 10 min"}, desc:"En Piccadilly. Sus escaparates de Navidad son famosos."},
   {t:"19:00", name:"Cena en Soho", short:"Cena", kind:"comida", lat:51.5130, lon:-0.1393, q:"Kingly Court London", leg:{m:"pie", txt:"A pie · 10 min"}, desc:"Kingly Court, junto a Carnaby: muchos restaurantes de precio medio. Musical opcional a las 19:30."},
-  casa("21:30", "", {m:"metro", txt:"Metro Central · Oxford Circus → Queensway · 10 min", cost:"£3,00"}),
+  casa("21:30", "", {m:"metro", txt:"Metro Central · Oxford Circus → Queensway · 10 min", cost:"£3,00 → tope £8,90"}),
   {t:"19:00", name:"Southbank Centre Winter Market", short:"Southbank", alt:true, xmas:true, kind:"navidad", lat:51.5050, lon:-0.1170, q:"Southbank Centre Winter Market", desc:"Alternativa para cenar: puestos de comida junto al London Eye, a 20 min andando desde Piccadilly. Para volver, Bakerloo de Embankment a Oxford Circus y allí la Central."}
  ]},
  {id:"dom", short:"Dom 22", long:"Domingo 22 de noviembre", date:"2026-11-22", theme:"East End y vuelta por Stansted", c:"--d5", cost:"£12,90", costNote:"+ consigna £3–5", reservas:"Stansted Express 12:25", stops:[
@@ -248,20 +960,17 @@ var CHECKS = [
  ["abadia", "Abadía de Westminster, entrada de estudiante", "jue 9:30"],
  ["freetour", "Free Tour Londres Imprescindible en 1,5h (GuruWalk)", "jue 11:00"],
  ["torre", "Torre de Londres, entrada de estudiante", "vie 9:00"],
- ["horizon", "Horizon 22 (gratis)", "vie 15:45"],
- ["ww", "Hyde Park Winter Wonderland", "vie 18:15"],
+ ["horizon", "Horizon 22: gratis, pero con reserva (salen cada día)", "vie 15:45"],
+ ["ww", "Hyde Park Winter Wonderland: entrada con hora obligatoria", "vie 18:15"],
+ ["nhm", "Museo de Historia Natural: gratis, reservad hora para no hacer cola", "sáb 14:00"],
  ["stx", "Stansted Express (Advance o Duo)", "dom 12:25"],
  ["checkin-ry", "Check-in de Ryanair (se abre 24 h antes)", "sáb 16:20"],
  ["somerset", "Opcional: patinaje en Somerset House", "jue 17:15"],
  ["musical", "Opcional: musical en TodayTix", "jue o sáb"]
 ];
 
-/* ---------- Proyección del mapa ---------- */
-var B = {lon0:-0.215, lon1:-0.060, lat0:51.474, lat1:51.534, W:1000, H:620};
-function P(lat, lon){ return [(lon - B.lon0) / (B.lon1 - B.lon0) * B.W, (B.lat1 - lat) / (B.lat1 - B.lat0) * B.H]; }
-var KM = B.W / ((B.lon1 - B.lon0) * 111.32 * Math.cos(51.504 * Math.PI / 180));
-
-var RIVER = [[51.4745,-0.215],[51.4740,-0.200],[51.4765,-0.183],[51.4810,-0.170],[51.4848,-0.155],[51.4838,-0.145],[51.4858,-0.135],[51.4880,-0.127],[51.4950,-0.1225],[51.5020,-0.1210],[51.5065,-0.1195],[51.5090,-0.1150],[51.5097,-0.1040],[51.5097,-0.0950],[51.5080,-0.0880],[51.5070,-0.0800],[51.5055,-0.0740],[51.5040,-0.0650],[51.5048,-0.0560]];
+/* ---------- Mapa simplificado (solo si no cargan las calles) ---------- */
+var RIVER = [[51.4745,-0.230],[51.4745,-0.215],[51.4740,-0.200],[51.4765,-0.183],[51.4810,-0.170],[51.4848,-0.155],[51.4838,-0.145],[51.4858,-0.135],[51.4880,-0.127],[51.4950,-0.1225],[51.5020,-0.1210],[51.5065,-0.1195],[51.5090,-0.1150],[51.5097,-0.1040],[51.5097,-0.0950],[51.5080,-0.0880],[51.5070,-0.0800],[51.5055,-0.0740],[51.5040,-0.0650],[51.5048,-0.0560],[51.5070,-0.0450]];
 var PARKS = [
  [[51.5106,-0.1880],[51.5118,-0.1760],[51.5131,-0.1590],[51.5100,-0.1553],[51.5030,-0.1515],[51.5023,-0.1680],[51.5017,-0.1800],[51.5020,-0.1885]],
  [[51.5070,-0.1495],[51.5068,-0.1412],[51.5042,-0.1402],[51.5022,-0.1452]],
@@ -269,10 +978,47 @@ var PARKS = [
  [[51.5236,-0.1655],[51.5236,-0.1450],[51.5345,-0.1450],[51.5345,-0.1655]]
 ];
 var SERPENTINE = [[51.5072,-0.1765],[51.5058,-0.1705],[51.5046,-0.1645],[51.5052,-0.1608]];
+var ROADS = [
+ [[51.5060,-0.2150],[51.5075,-0.2050],[51.5091,-0.1965],[51.5105,-0.1870],[51.5118,-0.1760],[51.5131,-0.1590],[51.5148,-0.1500],[51.5152,-0.1418],[51.5163,-0.1307],[51.5174,-0.1200],[51.5180,-0.1100]],
+ [[51.5131,-0.1590],[51.5027,-0.1527]],
+ [[51.5027,-0.1527],[51.5068,-0.1430],[51.5100,-0.1347]],
+ [[51.5152,-0.1418],[51.5120,-0.1395],[51.5105,-0.1370],[51.5100,-0.1347]],
+ [[51.5100,-0.1347],[51.5085,-0.1310],[51.5079,-0.1290]],
+ [[51.5085,-0.1282],[51.5130,-0.1295],[51.5163,-0.1307],[51.5220,-0.1360],[51.5255,-0.1385]],
+ [[51.5100,-0.1347],[51.5125,-0.1310],[51.5150,-0.1270]],
+ [[51.5076,-0.1278],[51.5040,-0.1265],[51.5005,-0.1265]],
+ [[51.5066,-0.1287],[51.5040,-0.1340],[51.5022,-0.1395]],
+ [[51.5027,-0.1527],[51.5022,-0.1395]],
+ [[51.4995,-0.1290],[51.4975,-0.1360],[51.4965,-0.1430]],
+ [[51.5027,-0.1527],[51.4990,-0.1480],[51.4965,-0.1440]],
+ [[51.5079,-0.1262],[51.5105,-0.1215],[51.5118,-0.1180],[51.5132,-0.1130],[51.5140,-0.1060],[51.5140,-0.1020],[51.5139,-0.0985],[51.5137,-0.0935],[51.5133,-0.0890]],
+ [[51.5133,-0.0890],[51.5132,-0.0840],[51.5135,-0.0790],[51.5140,-0.0755]],
+ [[51.5135,-0.0835],[51.5175,-0.0810],[51.5230,-0.0775],[51.5270,-0.0775]],
+ [[51.5150,-0.0730],[51.5195,-0.0750],[51.5250,-0.0765]],
+ [[51.5098,-0.0770],[51.5055,-0.0754],[51.5010,-0.0740]],
+ [[51.5100,-0.0880],[51.5080,-0.0877],[51.5045,-0.0890],[51.5010,-0.0925]],
+ [[51.5005,-0.1235],[51.5070,-0.1215],[51.5100,-0.1130],[51.5110,-0.1040],[51.5100,-0.0960]],
+ [[51.5008,-0.1245],[51.5010,-0.1170]],
+ [[51.5118,-0.1180],[51.5080,-0.1165],[51.5050,-0.1135]],
+ [[51.5091,-0.1965],[51.5045,-0.1935],[51.5016,-0.1925]],
+ [[51.4990,-0.2050],[51.5016,-0.1925],[51.5020,-0.1830],[51.5018,-0.1760],[51.5017,-0.1650],[51.5015,-0.1605],[51.5027,-0.1527]],
+ [[51.5015,-0.1605],[51.4985,-0.1660],[51.4950,-0.1715],[51.4941,-0.1740],[51.4955,-0.1800],[51.4950,-0.1900]],
+ [[51.4941,-0.1740],[51.4985,-0.1745],[51.5018,-0.1755]],
+ [[51.5131,-0.1590],[51.5170,-0.1630],[51.5207,-0.1700],[51.5225,-0.1570],[51.5240,-0.1450],[51.5265,-0.1330],[51.5300,-0.1240]],
+ [[51.5105,-0.1874],[51.5175,-0.1880]],
+ [[51.5150,-0.1880],[51.5145,-0.1950],[51.5160,-0.2010]],
+ [[51.5100,-0.1990],[51.5133,-0.2027],[51.5160,-0.2050],[51.5200,-0.2090]]
+];
+var ROADLABELS = [
+ [51.5142,-0.1520,"Oxford St"], [51.5112,-0.1700,"Bayswater Rd"], [51.5060,-0.1440,"Piccadilly"], [51.5125,-0.1398,"Regent St"],
+ [51.5112,-0.1195,"Strand"], [51.5035,-0.1262,"Whitehall"], [51.5040,-0.1345,"The Mall"], [51.5017,-0.1700,"Kensington Rd"],
+ [51.4985,-0.1748,"Exhibition Rd"], [51.5140,-0.1876,"Queensway"], [51.5160,-0.2048,"Portobello Rd"], [51.5137,-0.1060,"Fleet St"],
+ [51.5185,-0.0805,"Bishopsgate"], [51.4955,-0.1830,"Cromwell Rd"]
+];
 var AREAS = [
  [51.5196,-0.2000,"Notting Hill"], [51.5150,-0.1835,"Bayswater"], [51.5088,-0.1680,"Hyde Park"], [51.4975,-0.1360,"Westminster"],
  [51.5160,-0.1330,"Soho"], [51.5225,-0.1230,"Bloomsbury"], [51.5170,-0.0925,"La City"], [51.5025,-0.1080,"South Bank"],
- [51.5275,-0.0810,"Shoreditch"], [51.4895,-0.1555,"Támesis"], [51.5280,-0.1555,"Regent's Park"]
+ [51.5275,-0.0810,"Shoreditch"], [51.4895,-0.1555,"Támesis"], [51.5280,-0.1555,"Regent's Park"], [51.4920,-0.1700,"South Kensington"]
 ];
 
 /* ---------- Estado ---------- */
@@ -305,165 +1051,190 @@ function dayRouteUrl(d){
   return "https://www.google.com/maps/dir/" + pts.join("/");
 }
 
-/* ---------- Encuadre ---------- */
-function mapSize(){ var m = document.getElementById("map"); return {w: m.clientWidth || 600, h: m.clientHeight || 400}; }
-function fitBox(b){
-  var sz = mapSize(), a = sz.w / sz.h;
-  var w = b.x1 - b.x0, h = b.y1 - b.y0;
-  var pad = Math.max(w, h) * 0.12 + 34;
-  w += pad * 2; h += pad * 2; w = Math.max(w, 230); h = Math.max(h, 150);
-  if (w / h < a) w = h * a; else h = w / a;
-  var cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
-  return {x: cx - w / 2, y: cy - h / 2, w: w, h: h};
+/* ---------- Mapa con calles (Leaflet) ---------- */
+var map = null, tiles = null, routes = null, marks = null, simple = null, here = null;
+var tileOk = false, tileErr = 0, simpleOn = false, mapReady = false;
+var TILE_URL = {
+  light: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+};
+var ATTR = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>';
+var ICON_FIT = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var ICON_LOC = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/><path d="M8 0.8v2.4M8 12.8v2.4M0.8 8h2.4M12.8 8h2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+var ICON_BIG = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M3.5 5.5 8 2l4.5 3.5M3.5 10.5 8 14l4.5-3.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function isDark(){
+  var t = document.documentElement.getAttribute("data-theme");
+  if (t === "dark") return true;
+  if (t === "light") return false;
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
-function targetVB(){
-  if (state.view === "todo"){
-    var sz = mapSize(), a = sz.w / sz.h, w = B.W, h = B.H;
-    if (w / h < a) w = h * a; else h = w / a;
-    return {x: B.W / 2 - w / 2, y: B.H / 2 - h / 2, w: w, h: h};
+function setTiles(){
+  if (!map || simpleOn) return;
+  var url = TILE_URL[isDark() ? "dark" : "light"];
+  if (tiles && tiles._url === url) return;
+  if (tiles) map.removeLayer(tiles);
+  tiles = L.tileLayer(url, {subdomains: "abcd", maxZoom: 19, attribution: ATTR});
+  tiles.on("tileload", function(){ tileOk = true; });
+  tiles.on("tileerror", function(){ tileErr++; if (!tileOk && tileErr >= 3) useSimple(); });
+  tiles.addTo(map);
+}
+function useSimple(){
+  if (simpleOn || !map) return;
+  simpleOn = true;
+  if (tiles){ map.removeLayer(tiles); tiles = null; }
+  simple = L.layerGroup();
+  var base = {pane: "base", interactive: false};
+  function o(extra){ var r = {}; for (var k in base) r[k] = base[k]; for (var j in extra) r[j] = extra[j]; return r; }
+  PARKS.forEach(function(p){ L.polygon(p, o({className: "fb-park", stroke: false, fillOpacity: 1})).addTo(simple); });
+  L.polyline(RIVER, o({className: "fb-river", weight: 16, opacity: 1})).addTo(simple);
+  L.polyline(SERPENTINE, o({className: "fb-river", weight: 6, opacity: 1})).addTo(simple);
+  ROADS.forEach(function(r){ L.polyline(r, o({className: "fb-road-case", weight: 7, opacity: 1})).addTo(simple); });
+  ROADS.forEach(function(r){ L.polyline(r, o({className: "fb-road", weight: 4.5, opacity: 1})).addTo(simple); });
+  ROADLABELS.forEach(function(a){ L.marker([a[0], a[1]], {pane: "baselabels", interactive: false, keyboard: false, icon: L.divIcon({className: "fb-label fb-street", html: "<span>" + esc(a[2]) + "</span>", iconSize: [0, 0]})}).addTo(simple); });
+  AREAS.forEach(function(a){ L.marker([a[0], a[1]], {pane: "baselabels", interactive: false, keyboard: false, icon: L.divIcon({className: "fb-label fb-area", html: "<span>" + esc(a[2]) + "</span>", iconSize: [0, 0]})}).addTo(simple); });
+  simple.addTo(map);
+  var el = document.getElementById("map");
+  el.classList.add("is-simple");
+  el.classList.toggle("z-hi", map.getZoom() >= 14);
+  map.attributionControl.addAttribution("Mapa simplificado");
+  var gh = /github\.io$/.test(location.hostname);
+  document.getElementById("mapnote").textContent = gh
+    ? "Sin conexión: mapa simplificado con las avenidas principales."
+    : "Aquí se ven solo las avenidas principales. El mapa con todas las calles está en gonignacio535-stack.github.io/londres.";
+}
+
+var Tools = null;
+function initMap(){
+  var el = document.getElementById("map");
+  if (!window.L){
+    el.innerHTML = '<p class="nomap">No se ha podido cargar el mapa. Usa los botones «Abrir en Google Maps» de cada parada.</p>';
+    return;
   }
-  var d = dayById(state.view), b = {x0:Infinity, y0:Infinity, x1:-Infinity, y1:-Infinity};
-  function add(x, y){ b.x0 = Math.min(b.x0, x); b.y0 = Math.min(b.y0, y); b.x1 = Math.max(b.x1, x); b.y1 = Math.max(b.y1, y); }
-  d.stops.forEach(function(s, i){
-    if (!s.off){ var p = P(s.lat, s.lon); add(p[0], p[1]); return; }
-    var nb = s.alt ? P(CASA.lat, CASA.lon) : (i > 0 && !d.stops[i-1].off ? P(d.stops[i-1].lat, d.stops[i-1].lon) : P(d.stops[i+1].lat, d.stops[i+1].lon));
-    if (s.off === "s") add(nb[0], nb[1] + 70);
-    if (s.off === "w") add(nb[0] - 110, nb[1]);
-    if (s.off === "ne") add(nb[0] + 60, nb[1] - 60);
-  });
-  return fitBox(b);
-}
-function goVB(target){
-  cancelAnimationFrame(state.anim);
-  if (!state.vb || reduce){ state.vb = target; draw(); return; }
-  var from = state.vb, t0 = performance.now(), dur = 520;
-  function step(now){
-    var t = Math.min(1, (now - t0) / dur), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    state.vb = {x: from.x + (target.x - from.x) * e, y: from.y + (target.y - from.y) * e, w: from.w + (target.w - from.w) * e, h: from.h + (target.h - from.h) * e};
-    draw();
-    if (t < 1) state.anim = requestAnimationFrame(step);
-  }
-  state.anim = requestAnimationFrame(step);
-}
-
-/* ---------- Dibujo ---------- */
-function pts(list){ return list.map(function(p){ var q = P(p[0], p[1]); return q[0].toFixed(1) + "," + q[1].toFixed(1); }).join(" "); }
-function offPos(s, anchor, vb, k){
-  var arrow = s.off === "s" ? "↓ " : s.off === "w" ? "← " : "↗ ";
-  var label = arrow + s.offLabel, wpx = label.length * 6.6 + 22, w = wpx * k, h = 22 * k, x, y;
-  var clamp = function(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); };
-  if (s.off === "s"){ x = clamp(anchor[0], vb.x + w / 2 + 10 * k, vb.x + vb.w - w / 2 - 10 * k); y = vb.y + vb.h - h / 2 - 12 * k; }
-  else if (s.off === "w"){ x = vb.x + w / 2 + 10 * k; y = clamp(anchor[1], vb.y + h, vb.y + vb.h - h); }
-  else { x = vb.x + vb.w - w / 2 - 10 * k; y = vb.y + h / 2 + 12 * k; }
-  return {x: x, y: y, wpx: wpx, label: label};
-}
-function geometry(d, vb, k){
-  var out = [];
-  d.stops.forEach(function(s){ if (!s.off){ var p = P(s.lat, s.lon); out.push({s: s, x: p[0], y: p[1]}); } else out.push({s: s, off: true}); });
-  out.forEach(function(g, i){
-    if (!g.off) return;
-    var nb;
-    if (g.s.alt) nb = P(CASA.lat, CASA.lon);
-    else { var prev = out[i-1], next = out[i+1]; var a = (prev && !prev.off && !prev.s.alt) ? prev : next; nb = [a.x, a.y]; }
-    var o = offPos(g.s, nb, vb, k); g.x = o.x; g.y = o.y; g.wpx = o.wpx; g.label = o.label;
-  });
-  return out;
-}
-
-function draw(){
-  var vb = state.vb, sz = mapSize(), k = vb.w / sz.w, o = [];
-  o.push('<svg viewBox="' + [vb.x, vb.y, vb.w, vb.h].map(function(v){ return v.toFixed(2); }).join(" ") + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa esquemático de Londres con la ruta">');
-  o.push('<rect x="' + (vb.x - 50) + '" y="' + (vb.y - 50) + '" width="' + (vb.w + 100) + '" height="' + (vb.h + 100) + '" fill="var(--land)"/>');
-  // cuadrícula de 1 km
-  o.push('<g stroke="var(--grid)" stroke-width="' + (1 * k) + '">');
-  for (var gx = Math.floor(vb.x / KM) * KM; gx < vb.x + vb.w; gx += KM) o.push('<line x1="' + gx + '" y1="' + vb.y + '" x2="' + gx + '" y2="' + (vb.y + vb.h) + '"/>');
-  for (var gy = Math.floor(vb.y / KM) * KM; gy < vb.y + vb.h; gy += KM) o.push('<line x1="' + vb.x + '" y1="' + gy + '" x2="' + (vb.x + vb.w) + '" y2="' + gy + '"/>');
-  o.push('</g>');
-  PARKS.forEach(function(p){ o.push('<polygon points="' + pts(p) + '" fill="var(--park)" stroke="var(--park)" stroke-width="6" stroke-linejoin="round"/>'); });
-  o.push('<polyline points="' + pts(RIVER) + '" fill="none" stroke="var(--river)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>');
-  o.push('<polyline points="' + pts(SERPENTINE) + '" fill="none" stroke="var(--river)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>');
-  AREAS.forEach(function(a){
-    var p = P(a[0], a[1]);
-    o.push('<g transform="translate(' + p[0] + ' ' + p[1] + ') scale(' + k + ')"><text text-anchor="middle" font-size="11.5" font-style="italic" fill="var(--muted)" opacity=".75" font-family="var(--f-body)" letter-spacing=".3">' + esc(a[2]) + '</text></g>');
-  });
-
-  var days = state.view === "todo" ? DAYS : [dayById(state.view)];
-  var full = state.view !== "todo";
-
-  // rutas
-  days.forEach(function(d){
-    var g = geometry(d, vb, k), col = "var(" + d.c + ")", prev = null;
-    g.forEach(function(p){
-      if (p.s.alt) return;
-      if (prev){
-        var m = p.s.leg ? p.s.leg.m : "pie", solid = (m === "metro" || m === "tren");
-        var sw = (full ? (solid ? 5 : 3) : (solid ? 3 : 2)) * k;
-        o.push('<line x1="' + prev.x + '" y1="' + prev.y + '" x2="' + p.x + '" y2="' + p.y + '" stroke="' + col + '" stroke-width="' + sw + '" stroke-linecap="round"' + (solid ? '' : ' stroke-dasharray="' + (6 * k) + ' ' + (5 * k) + '"') + ' opacity="' + (full ? 1 : .85) + '"/>');
-      }
-      prev = p;
-    });
-    if (full){
-      g.forEach(function(p){
-        if (!p.s.alt) return;
-        var h = P(CASA.lat, CASA.lon);
-        if (p.s.off) o.push('<line x1="' + h[0] + '" y1="' + h[1] + '" x2="' + p.x + '" y2="' + p.y + '" stroke="' + col + '" stroke-width="' + (2 * k) + '" stroke-dasharray="' + (2 * k) + ' ' + (5 * k) + '" stroke-linecap="round" opacity=".8"/>');
+  map = L.map(el, {zoomControl: false, zoomSnap: 0.25, zoomDelta: 1, minZoom: 9, maxZoom: 18, worldCopyJump: false});
+  map.attributionControl.setPrefix(false);
+  map.createPane("base").style.zIndex = 250;
+  map.createPane("baselabels").style.zIndex = 350;
+  L.control.zoom({position: "topright", zoomInTitle: "Acercar", zoomOutTitle: "Alejar"}).addTo(map);
+  Tools = L.Control.extend({
+    options: {position: "topright"},
+    onAdd: function(){
+      var div = L.DomUtil.create("div", "leaflet-bar maptools");
+      div.innerHTML =
+        '<a href="#" role="button" data-tool="fit" title="Volver a encuadrar" aria-label="Volver a encuadrar">' + ICON_FIT + '</a>' +
+        '<a href="#" role="button" data-tool="loc" title="Dónde estoy" aria-label="Mostrar dónde estoy">' + ICON_LOC + '</a>' +
+        '<a href="#" role="button" data-tool="big" class="tool-big" title="Agrandar el mapa" aria-label="Agrandar el mapa" aria-pressed="false">' + ICON_BIG + '</a>';
+      L.DomEvent.disableClickPropagation(div);
+      L.DomEvent.disableScrollPropagation(div);
+      L.DomEvent.on(div, "click", function(e){
+        var a = e.target.closest ? e.target.closest("[data-tool]") : null;
+        L.DomEvent.preventDefault(e);
+        if (a) tool(a.getAttribute("data-tool"), a);
       });
+      return div;
     }
-    // pastillas fuera del mapa
-    g.forEach(function(p){
-      if (!p.off) return;
-      if (!full && p.s.alt) return;
-      var active = state.active === p.s.id;
-      o.push('<g class="mk" data-id="' + p.s.id + '" tabindex="0" role="button" aria-label="' + esc(p.s.name) + '" transform="translate(' + p.x + ' ' + p.y + ') scale(' + k + ')">' +
-        '<rect x="' + (-p.wpx / 2) + '" y="-11" width="' + p.wpx + '" height="22" rx="11" fill="var(--surface)" stroke="' + col + '" stroke-width="' + (active ? 2.5 : 1.5) + '"' + (p.s.alt ? ' stroke-dasharray="4 3"' : '') + '/>' +
-        '<text text-anchor="middle" y="4" font-size="11.5" font-weight="600" fill="var(--fg)" font-family="var(--f-body)">' + esc(p.label) + '</text></g>');
-    });
   });
-
-  // casa
-  var hp = P(CASA.lat, CASA.lon);
-  o.push('<g class="mk" data-id="casa" transform="translate(' + hp[0] + ' ' + hp[1] + ') scale(' + k + ')" aria-hidden="true"><rect x="-12" y="-12" width="24" height="24" rx="6" fill="var(--fg)" stroke="var(--land)" stroke-width="2"/><path d="M-7 0.5 0 -6 7 0.5V7H2.5V2.5h-5V7H-7z" fill="var(--land)"/></g>');
-
-  // paradas
-  days.forEach(function(d){
-    var g = geometry(d, vb, k), col = "var(" + d.c + ")";
-    g.forEach(function(p){
-      var s = p.s;
-      if (p.off || s.home) return;
-      if (!full && s.alt) return;
-      var isDone = done.indexOf(s.id) >= 0, active = state.active === s.id;
-      if (!full){
-        o.push('<g class="mk" data-id="' + s.id + '" tabindex="-1" transform="translate(' + p.x + ' ' + p.y + ') scale(' + k + ')"><circle r="5.5" fill="' + col + '" stroke="var(--land)" stroke-width="1.5"/>' + (s.xmas ? '<circle r="8" fill="none" stroke="var(--gold)" stroke-width="1.5"/>' : '') + '</g>');
-        return;
-      }
-      var r = active ? 13 : 10.5;
-      var fill = s.alt ? "var(--surface)" : (isDone ? "var(--muted)" : col);
-      var txtCol = s.alt ? "var(--fg)" : "var(--on-line)";
-      o.push('<g class="mk" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' + esc(s.num + ". " + s.name) + '" transform="translate(' + p.x + ' ' + p.y + ') scale(' + k + ')">' +
-        (s.xmas ? '<circle r="' + (r + 4) + '" fill="var(--land)" stroke="var(--gold)" stroke-width="2"/>' : '') +
-        '<circle r="' + r + '" fill="' + fill + '" stroke="' + (s.alt ? col : "var(--land)") + '" stroke-width="2"' + (s.alt ? ' stroke-dasharray="3 2.5"' : '') + '/>' +
-        '<text text-anchor="middle" y="' + (active ? 4.5 : 3.8) + '" font-size="' + (active ? 13 : 11) + '" font-weight="700" fill="' + txtCol + '" font-family="var(--f-body)">' + (isDone && !s.alt ? "✓" : s.num) + '</text></g>');
-    });
+  new Tools().addTo(map);
+  routes = L.layerGroup().addTo(map);
+  marks = L.layerGroup().addTo(map);
+  map.on("zoomend", function(){ el.classList.toggle("z-hi", map.getZoom() >= 14); el.classList.toggle("z-lo", map.getZoom() < 12.5); });
+  map.on("locationfound", function(e){
+    if (here) map.removeLayer(here);
+    here = L.layerGroup([
+      L.circle(e.latlng, {radius: Math.min(e.accuracy, 300), className: "here-acc", weight: 1, interactive: false}),
+      L.circleMarker(e.latlng, {radius: 7, className: "here-dot", weight: 3, fillOpacity: 1}).bindTooltip("Estáis aquí", {direction: "top", offset: [0, -8], className: "tip"})
+    ]).addTo(map);
   });
+  map.on("locationerror", function(){ toast("No se ha podido ver dónde estás. Da permiso de ubicación al navegador y vuelve a probar."); });
+  setTiles();
+  try{
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", setTiles); else if (mq.addListener) mq.addListener(setTiles);
+  }catch(e){}
+  if (window.MutationObserver) new MutationObserver(setTiles).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+  if (window.ResizeObserver) new ResizeObserver(function(){ map.invalidateSize({pan: false}); }).observe(el);
+}
 
-  // etiqueta de la parada activa
-  if (full && state.active){
-    var s = findStop(state.active);
-    if (s && !s.off && !s.home){
-      var p2 = P(s.lat, s.lon), name = s.short || s.name;
-      var right = p2[0] + 20 * k + name.length * 7 * k < vb.x + vb.w;
-      o.push('<g transform="translate(' + p2[0] + ' ' + p2[1] + ') scale(' + k + ')" pointer-events="none"><text x="' + (right ? 19 : -19) + '" y="4.5" text-anchor="' + (right ? "start" : "end") + '" font-size="13" font-weight="700" fill="var(--fg)" stroke="var(--land)" stroke-width="4" stroke-linejoin="round" paint-order="stroke" font-family="var(--f-body)">' + esc(name) + '</text></g>');
-    }
+var toastTimer = 0;
+function toast(msg){
+  var t = document.getElementById("maptoast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.hidden = true; }, 4500);
+}
+function tool(name, a){
+  if (!map) return;
+  if (name === "fit"){ fitView(true); return; }
+  if (name === "loc"){ map.locate({setView: true, maxZoom: 16, enableHighAccuracy: true, timeout: 10000}); return; }
+  if (name === "big"){
+    var el = document.getElementById("map"), on = !el.classList.contains("big");
+    el.classList.toggle("big", on);
+    a.setAttribute("aria-pressed", String(on));
+    a.title = on ? "Reducir el mapa" : "Agrandar el mapa";
+    a.setAttribute("aria-label", a.title);
+    setTimeout(function(){ map.invalidateSize({pan: false}); }, 60);
   }
+}
 
-  // escala y norte
-  var len = vb.w < 420 ? KM / 2 : KM, lab = vb.w < 420 ? "500 m" : "1 km";
-  var sx = vb.x + vb.w - 16 * k - len, sy = vb.y + vb.h - 16 * k;
-  o.push('<g stroke="var(--fg)" stroke-width="' + (1.5 * k) + '" opacity=".7"><line x1="' + sx + '" y1="' + sy + '" x2="' + (sx + len) + '" y2="' + sy + '"/><line x1="' + sx + '" y1="' + (sy - 4 * k) + '" x2="' + sx + '" y2="' + sy + '"/><line x1="' + (sx + len) + '" y1="' + (sy - 4 * k) + '" x2="' + (sx + len) + '" y2="' + sy + '"/></g>');
-  o.push('<g transform="translate(' + (sx + len / 2) + ' ' + (sy - 7 * k) + ') scale(' + k + ')"><text text-anchor="middle" font-size="10.5" fill="var(--fg)" opacity=".75" font-family="var(--f-mono)">' + lab + '</text></g>');
-  o.push('<g transform="translate(' + (vb.x + 18 * k) + ' ' + (vb.y + 22 * k) + ') scale(' + k + ')" opacity=".7"><path d="M0 -10 5 4 0 1 -5 4Z" fill="var(--fg)"/><text y="16" text-anchor="middle" font-size="10" font-weight="700" fill="var(--fg)" font-family="var(--f-mono)">N</text></g>');
-  o.push('</svg>');
-  document.getElementById("map").innerHTML = o.join("");
+function viewBounds(){
+  var pts = [];
+  (state.view === "todo" ? DAYS : [dayById(state.view)]).forEach(function(d){
+    d.stops.forEach(function(s){ if (!s.off) pts.push([s.lat, s.lon]); });
+  });
+  return L.latLngBounds(pts);
+}
+function fitView(animate){
+  if (!map) return;
+  var narrow = window.innerWidth < 600, pad = narrow ? [22, 22] : [44, 44];
+  var opts = {paddingTopLeft: pad, paddingBottomRight: [pad[0] + (narrow ? 0 : 30), pad[1]], maxZoom: 16};
+  if (animate && !reduce){ opts.duration = 0.6; map.flyToBounds(viewBounds(), opts); }
+  else { opts.animate = false; map.fitBounds(viewBounds(), opts); }
+}
+function focusStop(s){
+  if (!map || !s) return;
+  var ll = L.latLng(s.lat, s.lon);
+  if (s.off){ if (reduce) map.setView(ll, 11); else map.flyTo(ll, 11, {duration: 0.6}); return; }
+  if (!map.getBounds().pad(-0.15).contains(ll)) map.panTo(ll, {animate: !reduce});
+}
+
+function pinIcon(s, full){
+  var c = "var(" + s.day.c + ")", isDone = done.indexOf(s.id) >= 0, act = state.active === s.id;
+  if (!full) return L.divIcon({className: "pin dot" + (s.xmas ? " xmas" : ""), html: '<span style="--c:' + c + '"></span>', iconSize: [14, 14]});
+  var sz = act ? 34 : 26;
+  var cls = "pin" + (s.xmas ? " xmas" : "") + (s.alt ? " alt" : "") + (isDone && !s.alt ? " done" : "") + (act ? " active" : "");
+  return L.divIcon({className: cls, html: '<span style="--c:' + c + '">' + (isDone && !s.alt ? "✓" : s.num) + '</span>', iconSize: [sz, sz]});
+}
+function draw(){
+  if (!map) return;
+  routes.clearLayers(); marks.clearLayers();
+  var full = state.view !== "todo", days = full ? [dayById(state.view)] : DAYS;
+  days.forEach(function(d){
+    var prev = null;
+    d.stops.forEach(function(s){
+      if (s.alt) return;
+      if (prev && !(prev.lat === s.lat && prev.lon === s.lon)){
+        var m = s.leg ? s.leg.m : "pie", solid = (m === "metro" || m === "tren");
+        var w = full ? (solid ? 5 : 3.5) : (solid ? 3 : 2);
+        var ll = [[prev.lat, prev.lon], [s.lat, s.lon]], far = (s.off || prev.off) ? " far" : "";
+        L.polyline(ll, {className: "rt-case" + far, weight: w + 3, opacity: 1, interactive: false}).addTo(routes);
+        L.polyline(ll, {className: "rt " + d.id + far, weight: w, opacity: 1, dashArray: solid ? null : "6 7", interactive: false}).addTo(routes);
+      }
+      prev = s;
+    });
+  });
+  L.marker([CASA.lat, CASA.lon], {icon: L.divIcon({className: "pin home", html: "<span>" + HOUSE + "</span>", iconSize: [26, 26]}), keyboard: false, zIndexOffset: -100, title: "Casa · 80 Inverness Terrace"})
+    .bindTooltip("Casa · 80 Inverness Terrace", {direction: "top", offset: [0, -14], className: "tip"}).addTo(marks);
+  days.forEach(function(d){
+    d.stops.forEach(function(s){
+      if (s.home) return;
+      if (!full && s.alt) return;
+      var act = state.active === s.id;
+      var mk = L.marker([s.lat, s.lon], {icon: pinIcon(s, full), title: (full && s.num ? s.num + ". " : "") + s.name, alt: s.name, riseOnHover: true, zIndexOffset: act ? 1000 : (s.alt ? -50 : 0)});
+      mk.on("click", function(){ if (state.view === "todo") go(s.day.id, s.id, true); else setActive(s.id, true); });
+      if (full) mk.bindTooltip(esc(s.short || s.name), {permanent: act, direction: "auto", offset: [act ? 18 : 14, 0], className: "tip"});
+      mk.addTo(marks);
+    });
+  });
 }
 
 /* ---------- Lista ---------- */
@@ -484,7 +1255,7 @@ function stopHTML(s, prev){
   h.push('</div><h3>' + esc(s.home ? "Casa" : s.name) + '</h3>');
   if (s.desc) h.push('<p>' + esc(s.desc) + '</p>');
   h.push('<div class="links"><a href="' + mapsUrl(s) + '">Abrir en Google Maps</a>');
-  if (s.book) h.push('<a href="' + s.book + '">Reservar en GuruWalk</a>');
+  if (s.book) h.push('<a class="book" href="' + s.book + '">' + esc(s.bookLabel || "Reservar") + '</a>');
   if (prev && !s.alt){
     var mode = (s.leg && (s.leg.m === "pie" || s.leg.m === "tour")) ? "walking" : "transit";
     if (!(prev.lat === s.lat && prev.lon === s.lon)) h.push('<a href="' + dirUrl(prev, s, mode) + '">Cómo llegar</a>');
@@ -506,19 +1277,19 @@ function renderList(){
       h.push('<button type="button" class="daycard" data-go="' + d.id + '" style="--c:var(' + d.c + ')"><span class="dc-top"><svg width="30" height="10" aria-hidden="true"><line x1="2" y1="5" x2="28" y2="5" stroke="var(' + d.c + ')" stroke-width="4" stroke-linecap="round"/><circle cx="15" cy="5" r="4" fill="var(' + d.c + ')" stroke="var(--surface)" stroke-width="1.5"/></svg>' + d.short + '</span><span class="dc-title">' + esc(d.theme) + '</span><span class="dc-meta">' + n + ' paradas · ' + (x ? x + ' navideñas · ' : '') + 'transporte ' + d.cost + '</span></button>');
     });
     h.push('</div>');
-    h.push('<section class="block"><h3 class="sec">Reservas y trámites</h3><ul class="checks">');
+    h.push('<section class="block"><h3 class="sec">Reservas y trámites</h3><p class="checknote">Gratis pero con reserva para no hacer cola: Horizon 22 y el Museo de Historia Natural. Sin reservar: National Gallery, Tate Modern, mercados y luces.</p><ul class="checks">');
     CHECKS.forEach(function(c){
       var on = checks.indexOf(c[0]) >= 0;
       h.push('<li><label for="chk-' + c[0] + '"><input type="checkbox" id="chk-' + c[0] + '" data-check="' + c[0] + '"' + (on ? " checked" : "") + '><span>' + esc(c[1]) + '</span><span class="when">' + esc(c[2]) + '</span></label></li>');
     });
     h.push('</ul></section>');
     h.push('<section class="block"><h3 class="sec">Gasto estimado por persona</h3><table class="budget"><tbody>' +
-      '<tr><td>Transporte<span class="sub">Aeropuertos incluidos; con contactless y tope diario</span></td><td class="n">£47,60</td></tr>' +
+      '<tr><td>Transporte<span class="sub">Aeropuertos incluidos; con contactless y tope diario</span></td><td class="n">£50,50</td></tr>' +
       '<tr><td>Entradas con precio de estudiante<span class="sub">Abadía, Torre y Winter Wonderland</span></td><td class="n">£63</td></tr>' +
       '<tr><td>Propina del free tour</td><td class="n">£10–15</td></tr>' +
       '<tr><td>Comida y bebida<span class="sub">£30–40 al día, desayunos en casa</span></td><td class="n">£135–180</td></tr>' +
       '<tr><td>ETA<span class="sub">Si aún no la tenéis</span></td><td class="n">£20</td></tr>' +
-      '<tr class="total"><td>Total aproximado</td><td class="n">£280–325<span class="sub">≈ €330–380</span></td></tr>' +
+      '<tr class="total"><td>Total aproximado</td><td class="n">£283–328<span class="sub">≈ €330–385</span></td></tr>' +
       '</tbody></table></section>');
     h.push('<p class="foot">Las casillas y las paradas hechas se guardan en el navegador donde abras esta página.</p>');
   } else {
@@ -557,7 +1328,9 @@ function go(view, active, scroll){
   state.view = view; state.active = active || null;
   if (location.hash !== "#" + view){ try{ history.replaceState(null, "", "#" + view); }catch(e){ location.hash = view; } }
   renderTabs(); renderList();
-  goVB(targetVB());
+  draw();
+  if (changed || !active) fitView(mapReady);
+  mapReady = true;
   if (changed && !active){ var top = document.querySelector(".layout"); if (top && window.scrollY > top.offsetTop) window.scrollTo({top: top.offsetTop - 8, behavior: reduce ? "auto" : "smooth"}); }
   if (active && scroll) scrollToStop(active);
 }
@@ -565,6 +1338,7 @@ function setActive(id, scroll){
   state.active = id;
   document.querySelectorAll(".stop").forEach(function(li){ li.classList.toggle("is-active", li.getAttribute("data-stop") === id); });
   draw();
+  focusStop(findStop(id));
   if (scroll) scrollToStop(id);
 }
 function ensureMapVisible(){
@@ -583,18 +1357,8 @@ document.addEventListener("click", function(e){
     if (i >= 0) done.splice(i, 1); else done.push(id);
     save("londres-hechos", done); renderList(); draw(); return;
   }
-  if (t.closest("a")) return;
-  var mk = t.closest(".mk[data-id]");
-  if (mk){
-    var mid = mk.getAttribute("data-id"); if (mid === "casa") return;
-    var s = findStop(mid);
-    if (state.view === "todo" && s) go(s.day.id, mid, true); else setActive(mid, true);
-    return;
-  }
+  if (t.closest("a") || t.closest(".leaflet-container")) return;
   var li = t.closest("[data-stop]"); if (li){ setActive(li.getAttribute("data-stop"), false); ensureMapVisible(); }
-});
-document.addEventListener("keydown", function(e){
-  if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("mk")){ e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", {bubbles: true})); }
 });
 document.addEventListener("change", function(e){
   var c = e.target.getAttribute && e.target.getAttribute("data-check"); if (!c) return;
@@ -603,7 +1367,7 @@ document.addEventListener("change", function(e){
   save("londres-reservas", checks);
 });
 window.addEventListener("hashchange", function(){ var v = location.hash.slice(1); if (v && v !== state.view) go(v); });
-if (window.ResizeObserver) new ResizeObserver(function(){ if (!state.vb) return; cancelAnimationFrame(state.anim); state.vb = targetVB(); draw(); }).observe(document.getElementById("map"));
+initMap();
 
 /* ---------- Cuenta atrás ---------- */
 var today;
