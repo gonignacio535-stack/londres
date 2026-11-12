@@ -828,6 +828,21 @@ button, a{font-family:inherit}
 .checknote{margin:0 0 10px; color:var(--muted); font-size:13.5px; max-width:62ch}
 .done-btn[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
 .alts{margin-top:28px}
+.eats{margin-top:30px}
+.eatgrid{display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap:10px}
+.eat{background:var(--surface); border:1px solid var(--rule); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; min-width:0}
+.eat-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.eat-when{font-size:11.5px; font-weight:600; border-radius:999px; padding:3px 8px; background:var(--chip); color:var(--fg)}
+.eat-when time{font-family:var(--f-mono); font-weight:500; margin-left:4px}
+.eat-price{margin-left:auto; font-family:var(--f-mono); font-size:13px; font-weight:500; font-variant-numeric:tabular-nums; white-space:nowrap}
+.eat h4{margin:2px 0 0; font-size:15.5px; line-height:1.3}
+.eat .where{margin:0; font-size:12.5px; color:var(--muted)}
+.eat p.txt{margin:0; color:var(--muted); font-size:13.5px}
+.eat .links{margin-top:auto; padding-top:4px}
+.tips{list-style:none; margin:0; padding:0; display:grid; gap:0}
+.tips li{padding:9px 0; border-bottom:1px solid var(--rule); font-size:14px}
+.tips b{display:block; font-weight:700}
+.tips span{color:var(--muted)}
 .alts h3.sec, .sec{font-family:var(--f-mono); font-size:12px; font-weight:500; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); margin:0 0 10px}
 .alts .stops{margin-top:0}
 .alts .stops::before{display:none}
@@ -1012,6 +1027,44 @@ var CHECKS = [
  ["checkin-ry", "Check-in de Ryanair (se abre 24 h antes)", "sáb 16:20"],
  ["somerset", "Opcional: patinaje en Somerset House", "jue 17:15"],
  ["musical", "Opcional: musical en TodayTix", "jue o sáb"]
+];
+
+/* ---------- Comer barato ---------- */
+var EATS = {
+ mie: [
+  {m:"Comida", t:"14:00", name:"Meal deal en Boots o M&S", where:"Gatwick, zona de llegadas", price:"£5–7", q:"Boots Gatwick Airport", txt:"Sándwich, snack y bebida a precio fijo para comer en el tren. En el aeropuerto no hay descuento con tarjeta de cliente."},
+  {m:"Cena", t:"19:00", name:"Puestos de Camden Lock y Hawley Wharf", where:"Camden Market", price:"£5–12", q:"Hawley Wharf Camden", txt:"Falafel o samosas por unas £5, cajas de comida asiática o latina por £8–12. Muchos puestos dan a probar: dad una vuelta antes de elegir."}
+ ],
+ jue: [
+  {m:"Comida", t:"12:45", name:"Marugame Udon", where:"5-6 Brewer Street, Soho", price:"£7–11", q:"Marugame Udon Brewer Street London", txt:"Udon recién hecho y tempura suelta en autoservicio. Rápido y a 5 min de Piccadilly Circus."},
+  {m:"Comida", t:"12:45", name:"Brasserie Zédel", where:"20 Sherwood Street, junto a Piccadilly Circus", price:"£12–20", q:"Brasserie Zedel London", txt:"Brasserie parisina de los años 20 en un sótano espectacular. El menú y el steak haché con patatas son muy baratos para lo bonito que es."},
+  {m:"Cena", t:"19:00", name:"Jen Cafe", where:"Newport Place, Chinatown", price:"£6–12", q:"Jen Cafe Chinatown London", txt:"Dumplings pekineses de cerdo y cebollino con aceite de chile, hechos a mano en el escaparate."},
+  {m:"Cena", t:"19:00", name:"Baozi Inn", where:"25 Newport Court, Chinatown", price:"desde £2,80", q:"Baozi Inn London", txt:"Baozi de cerdo al vapor y fideos de Sichuan. Para cenar picando sin gastar casi nada."},
+  {m:"Cena", t:"19:00", name:"Four Seasons", where:"12 Gerrard Street, Chinatown", price:"£10–14", q:"Four Seasons Gerrard Street London", txt:"Su pato asado con arroz es famoso en todo Londres. Un plato por cabeza llena de sobra."}
+ ],
+ vie: [
+  {m:"Comida", t:"12:45", name:"Kappacasein", where:"Borough Market", price:"£8", q:"Kappacasein Borough Market", txt:"Tostada de queso fundido o raclette sobre patatas. De lo mejor y más barato del mercado."},
+  {m:"Postre", t:"13:30", name:"Bread Ahead", where:"Borough Market", price:"£4,50", q:"Bread Ahead Borough Market", txt:"Su donut relleno es el más famoso de Londres. Evitad los puestos de £10–12 (sándwiches gourmet, mac and cheese o fresas con chocolate)."},
+  {m:"Cena", t:"21:00", name:"Gold Mine", where:"102 Queensway, a 5 min de casa", price:"£12–15 aprox.", q:"Gold Mine 102 Queensway London", txt:"La comida de Winter Wonderland es cara (£10–15 el plato). Mejor merendad algo allí y cenad al volver: pato asado y char siu con arroz, el clásico de Queensway."}
+ ],
+ sab: [
+  {m:"Comida", t:"12:45", name:"Puestos de comida de Portobello", where:"Hacia el cruce con Golborne Road", price:"£7–10 aprox.", q:"Portobello Road Golborne Road street food", txt:"Paella, bratwurst, empanadas jamaicanas y pollo jerk. Comed de pie o en los bancos de la zona."},
+  {m:"Merienda", t:"13:30", name:"Churros García", where:"Delante del Electric Cinema, Portobello Road", price:"£5 aprox.", q:"Churros Garcia Portobello Road", txt:"Puesto de churros que solo sale los sábados. Para el camino al museo."},
+  {m:"Cena", t:"19:00", name:"Flat Iron", where:"17 Beak Street, junto a Carnaby", price:"£12–15", q:"Flat Iron Beak Street London", txt:"Un solo plato, filete con ensalada, y muy bien de precio. No se reserva: id antes de las 19:00 o apuntaos en la lista."},
+  {m:"Cena", t:"19:00", name:"Bao", where:"53 Lexington Street, Soho", price:"£5 cada bao", q:"Bao Soho Lexington Street", txt:"Bollos taiwaneses al vapor; con 2 o 3 por persona y algo para compartir cenáis bien."}
+ ],
+ dom: [
+  {m:"Desayuno", t:"10:15", name:"Beigel Bake", where:"159 Brick Lane", price:"£7 el de salt beef", q:"Beigel Bake Brick Lane", txt:"Abierto las 24 horas. El de salt beef con mostaza es el famoso; los bagels sencillos cuestan muy poco. Hay cola pero va rápida: sabed qué vais a pedir antes de llegar."},
+  {m:"Comida", t:"11:30", name:"Puestos de Old Spitalfields", where:"Spitalfields Market", price:"£8–12", q:"Old Spitalfields Market food", txt:"El domingo es de los días con más puestos de comida. Comed aquí antes de recoger la maleta."},
+  {m:"Antes del vuelo", t:"14:00", name:"Meal deal en Boots", where:"Stansted, después del control", price:"£5–7", q:"Boots Stansted Airport", txt:"Más barato que cualquier restaurante del aeropuerto para comer o llevar algo al avión."}
+ ]
+};
+var EAT_TIPS = [
+ ["Meal deal del supermercado", "Sándwich, snack y bebida por £3,50–5 en Tesco, Sainsbury's o Boots. Con la app de Tesco Clubcard sale más barato."],
+ ["Agua gratis", "En cualquier restaurante podéis pedir agua del grifo («tap water, please») sin pagar."],
+ ["Servicio en la cuenta", "Muchos restaurantes añaden un 12,5% de servicio. Es opcional: si no os convence, podéis pedir que lo quiten."],
+ ["Too Good To Go", "La app vende a mitad de precio o menos lo que les sobra al final del día a panaderías y cafeterías como Pret o GAIL's."],
+ ["Desayunos y alguna cena en casa", "Con la compra del miércoles os ahorráis £10–15 al día por persona."]
 ];
 
 /* ---------- Mapa simplificado (solo si no cargan las calles) ---------- */
@@ -1339,6 +1392,9 @@ function renderList(){
       h.push('<li><label for="chk-' + c[0] + '"><input type="checkbox" id="chk-' + c[0] + '" data-check="' + c[0] + '"' + (on ? " checked" : "") + '><span>' + esc(c[1]) + '</span><span class="when">' + esc(c[2]) + '</span></label></li>');
     });
     h.push('</ul></section>');
+    h.push('<section class="block"><h3 class="sec">Comer barato</h3><p class="checknote">Cada día tiene su apartado con sitios baratos cerca de donde estaréis a la hora de comer y de cenar. Además:</p><ul class="tips">');
+    EAT_TIPS.forEach(function(t){ h.push('<li><b>' + esc(t[0]) + '</b><span>' + esc(t[1]) + '</span></li>'); });
+    h.push('</ul></section>');
     h.push('<section class="block"><h3 class="sec">Gasto estimado por persona</h3><table class="budget"><tbody>' +
       '<tr><td>Transporte en metro<span class="sub">Aeropuertos incluidos; con contactless y tope diario. En bus os sale por unas £44</span></td><td class="n">£56,40</td></tr>' +
       '<tr><td>Entradas con precio de estudiante<span class="sub">Abadía, Torre y Winter Wonderland</span></td><td class="n">£63</td></tr>' +
@@ -1362,6 +1418,14 @@ function renderList(){
       h.push('<section class="alts"><h3 class="sec">Alternativas</h3><ol class="stops" style="--c:var(' + d.c + ')">');
       alts.forEach(function(s){ h.push(stopHTML(s, null)); });
       h.push('</ol></section>');
+    }
+    var eats = EATS[d.id] || [];
+    if (eats.length){
+      h.push('<section class="eats"><h3 class="sec">Comer barato</h3><div class="eatgrid">');
+      eats.forEach(function(e){
+        h.push('<article class="eat"><div class="eat-top"><span class="eat-when">' + esc(e.m) + '<time>' + esc(e.t) + '</time></span><span class="eat-price">' + esc(e.price) + '</span></div><h4>' + esc(e.name) + '</h4><p class="where">' + esc(e.where) + '</p><p class="txt">' + esc(e.txt) + '</p><div class="links"><a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(e.q) + '">Abrir en Google Maps</a></div></article>');
+      });
+      h.push('</div></section>');
     }
     var i = DAYS.indexOf(d), nx = DAYS[i + 1];
     h.push('<p class="foot">' + (nx ? '<button type="button" class="btn" data-go="' + nx.id + '">Siguiente: ' + nx.short + ' →</button>' : '<button type="button" class="btn" data-go="todo">Ver el viaje completo</button>') + '</p>');
